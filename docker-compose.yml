@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16.3
+    container_name: db-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: Urban-Jungle
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    networks:
+      - local_network
+    restart: always
+
+  redis:
+    image: redis:7.0.11
+    container_name: server-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - local_network
+    restart: always
+
+  web:
+    build: .
+    container_name: backend-django
+    command: >
+      sh -c "python manage.py makemigrations --noinput && 
+             python manage.py migrate --noinput && 
+             python manage.py runserver 0.0.0.0:8001"
+    volumes:
+      - .:/code
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: Urban-Jungle
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: 1234
+    networks:
+      - local_network
+    restart: always
+
+  celery:
+    build: .
+    container_name: celery-worker
+    command: >
+      sh -c "./wait-for-it.sh redis 6379 -- celery -A UrbanJungle worker --loglevel=info"
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+      - db
+    networks:
+      - local_network
+    restart: always
+
+  celery-beat:
+    build: .
+    container_name: celery-beat
+    command: >
+      sh -c "./wait-for-it.sh redis 6379 -- celery -A UrbanJungle beat --loglevel=info"
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+      - db
+    networks:
+      - local_network
+    restart: always
+
+
+networks:
+  local_network:
+    driver: bridge
