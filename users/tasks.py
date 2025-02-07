@@ -4,6 +4,8 @@ from .models import Pod,Todo
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from .utils import send_notification
+from django.db.models import Q
+
 
 channel_layer = get_channel_layer()
 
@@ -104,9 +106,9 @@ def update_pod_status():
         fruiting_date__lte=today,
         harvest_start_date__gt=today
     )
-    print("Pods in Fruiting Stage:")
-    for pod in pods_in_fruiting:
-        print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Fruiting Date: {pod.fruiting_date}, Harvest Start Date: {pod.harvest_start_date}")
+    # print("Pods in Fruiting Stage:")
+    # for pod in pods_in_fruiting:
+    #     print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Fruiting Date: {pod.fruiting_date}, Harvest Start Date: {pod.harvest_start_date}")
 
     pods_in_fruiting.update(status="Fruiting")
 
@@ -117,8 +119,55 @@ def update_pod_status():
         harvest_start_date__lte=today,
         harvest_end_date__gte=today
     )
-    print("Pods in Harvesting Stage:")
-    for pod in pods_in_harvesting:
-        print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Harvest Start Date: {pod.harvest_start_date}, Harvest End Date: {pod.harvest_end_date}")
+    # print("Pods in Harvesting Stage:")
+    # for pod in pods_in_harvesting:
+    #     print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Harvest Start Date: {pod.harvest_start_date}, Harvest End Date: {pod.harvest_end_date}")
 
     pods_in_harvesting.update(status="Harvesting")
+
+
+from django.utils.timezone import now
+
+@shared_task
+def check_pods_for_harvest():
+    """
+    This Celery task checks all pods in the database and creates a 'Todo' 
+    task for any pod that has reached its harvest start date.
+    """
+    today = now().date()
+
+    # Get all pods that have reached their harvest start date
+    pods_ready_for_harvest = Pod.objects.filter(harvest_start_date__lte=today)
+
+    for pod in pods_ready_for_harvest:
+        # Check if a Todo already exists for this Pod and harvest cycle
+        existing_todo = Todo.objects.filter(
+            created_for_pod=pod,
+            due_date=pod.harvest_end_date,
+            task_description=f"Harvest {pod.crop.name} in Pod {pod.pod_number}"
+        ).exists()
+
+        if not existing_todo:
+            # Create a new Todo
+            Todo.objects.create(
+                created_for_device=pod.device,
+                created_for_pod=pod,
+                due_date=pod.harvest_end_date,
+                priority="high",
+                task_description=f"Harvest {pod.crop.name} in Pod {pod.pod_number}"
+            )
+
+    return f"Checked {pods_ready_for_harvest.count()} pods for harvesting"
+
+from celery import shared_task
+from .models import DeviceAuditLog
+from .signals import check_abnormalities
+
+@shared_task
+def check_past_logs_for_abnormalities():
+    """
+    Runs periodically to check existing logs for abnormalities.
+    """
+    logs = DeviceAuditLog.objects.all()
+    for log in logs:
+        check_abnormalities(DeviceAuditLog, log, created=True)

@@ -14,13 +14,16 @@ from .views import (
     TodoListCreateView,
     TodoRetrieveUpdateDeleteView,
     UserTodoListView,
-    MarkTodoDoneView
+    MarkTodoDoneView,
+    TokenRefreshView,
+    ReceiveDeviceData
     )
 
 urlpatterns = [
     #auth
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     #crop
     path('crops/', CropListCreateView.as_view(), name='crop-list-create'),
@@ -32,6 +35,9 @@ urlpatterns = [
     path('devices/<int:device_id>/', DeviceUpdateDeleteView.as_view(), name='device-update-delete'),  # Update & Delete
     path('devices/get-user-devices/', UserDevicesView.as_view(), name='user-devices'), 
     path('devices/get-device-detail/', DeviceDetailByNameView.as_view(), name='device-detail'),
+
+    #device audit logs
+    path('receive-device-data/', ReceiveDeviceData.as_view(), name='receive-device-data'),
 
     #pod
     path('pods/', PodCreateRetrieveView.as_view(), name='pod-create-retrieve'),  # Create and List Pods

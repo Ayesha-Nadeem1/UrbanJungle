@@ -219,3 +219,10 @@ class TodoSerializer(serializers.ModelSerializer):
 
 #         instance.save()
 #         return instance
+
+from .models import DeviceAuditLog
+
+class DeviceAuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceAuditLog
+        fields = '__all__'

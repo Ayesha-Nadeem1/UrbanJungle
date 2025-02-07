@@ -20,3 +20,73 @@ def send_notification(user, message):
             "message": message,
         },
     )
+
+
+from datetime import timedelta,datetime, timezone
+from django.conf import settings
+import jwt
+
+def generate_access_token(user_id):
+    access_token_lifetime = settings.SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME', timedelta(minutes=15))
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.now(timezone.utc) + access_token_lifetime,
+        'iat': datetime.now(timezone.utc)
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+def generate_refresh_token(user_id):
+    refresh_token_lifetime = settings.SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME', timedelta(days=7))
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.now(timezone.utc) + refresh_token_lifetime,
+        'iat': datetime.now(timezone.utc)
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+def decode_token(token):
+    try:
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return None  # Token has expired
+    except jwt.InvalidTokenError:
+        return None  # Token is invalid
+
+
+from .models import Device, DeviceAuditLog
+from django.utils.timezone import now
+
+def parse_and_save_device_data(data_string):
+    """
+    Parses incoming IoT device data and saves it in the DeviceAuditLog model.
+    Expected format: device_din$temperature$humidity$tds$water_temperature$error_codes$_
+    """
+    try:
+        # Remove trailing `_` and split by `$`
+        data_parts = data_string.rstrip('_').split('$')
+        
+        if len(data_parts) < 6:
+            raise ValueError("Incomplete data received.")
+
+        # Extract fields
+        device_din, temperature, humidity, tds, water_temperature, error_codes = data_parts
+        
+        # Find device by DIN
+        device = Device.objects.filter(din=device_din).first()
+
+        # Save the data in the DeviceAuditLog
+        audit_log = DeviceAuditLog.objects.create(
+            device=device,
+            temperature=float(temperature) if temperature else None,
+            humidity=float(humidity) if humidity else None,
+            tds=tds if tds else None,
+            water_temperature=water_temperature if water_temperature else None,
+            error_codes=error_codes if error_codes else None,
+            timestamp=now()
+        )
+
+        return audit_log
+
+    except Exception as e:
+        print(f"Error parsing device data: {e}")
+        return None

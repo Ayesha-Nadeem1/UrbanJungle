@@ -45,9 +45,11 @@ class Crop(models.Model):
     min_optimal_temperature = models.FloatField(help_text="Optimal temperature in °C",default=15)
     min_optimal_humidity = models.FloatField(help_text="Optimal humidity in %",default=30)
     min_optimal_tds = models.TextField(help_text="Nutrients needed",default=600)
+    min_optimal_water_temperature = models.TextField(help_text="water temperature needed",default=15)
     max_optimal_temperature = models.FloatField(help_text="Optimal temperature in °C",default=25)
     max_optimal_humidity = models.FloatField(help_text="Optimal humidity in %",default=70)
     max_optimal_tds = models.TextField(help_text="Nutrients needed",default=1000)
+    max_optimal_water_temperature = models.TextField(help_text="water temperature needed",default=30)
     #water = models.FloatField(help_text="Water needed in liters")
     required_light_duration = models.PositiveIntegerField(blank=True,null=True)
     seeding_days = models.PositiveIntegerField(blank=True,null=True)
@@ -138,12 +140,15 @@ class LightSchedule(models.Model):
 
 
 # Audit Logs Model
-class AuditLog(models.Model):
+class DeviceAuditLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
-    action = models.TextField()
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     device = models.ForeignKey(Device, on_delete=models.SET_NULL, null=True, blank=True)
-
+    temperature = models.FloatField(help_text="current temperature",null=True)
+    humidity = models.FloatField(help_text="current humidity",null=True)
+    tds = models.TextField(help_text="current tds",null=True)
+    water_temperature = models.TextField(help_text="current water temperature",null=True)
+    error_codes = models.TextField(help_text="Custom name for the crop",null=True)
+    
     def __str__(self):
         return f"Log at {self.timestamp} - {self.action}"
 

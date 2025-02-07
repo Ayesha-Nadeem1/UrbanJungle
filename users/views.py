@@ -42,6 +42,25 @@ class LoginView(APIView):
 
         tokens = get_tokens_for_user(user)
         return Response({'tokens': tokens}, status=status.HTTP_200_OK)
+    
+from rest_framework_simplejwt.tokens import RefreshToken
+from .utils import generate_access_token, decode_token
+
+class TokenRefreshView(APIView):
+    def post(self, request):
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        decoded_data = decode_token(refresh_token)
+        if not decoded_data:
+            return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_id = decoded_data.get("user_id")
+        access_token = generate_access_token(user_id)
+
+        return Response({"access_token": access_token}, status=status.HTTP_200_OK)
+
 
 
 class CropListCreateView(APIView):
@@ -371,6 +390,30 @@ class MarkTodoDoneView(APIView):
             return Response({"message": "Todo marked as done."}, status=status.HTTP_200_OK)
         except Todo.DoesNotExist:
             return Response({"error": "Todo not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .utils import parse_and_save_device_data
+
+class ReceiveDeviceData(APIView):
+    """
+    API view to receive and process IoT device data.
+    """
+
+    def post(self, request, *args, **kwargs):
+        data_string = request.data.get("data_string")
+        if not data_string:
+            return Response({"error": "No data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        audit_log = parse_and_save_device_data(data_string)
+
+        if audit_log:
+            return Response({"message": "Data processed successfully"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"error": "Failed to process data"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 # class PodCreateRetrieveView(APIView):
 #     permission_classes = [IsAuthenticated]
 
