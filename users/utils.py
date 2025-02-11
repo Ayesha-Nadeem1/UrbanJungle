@@ -63,7 +63,10 @@ def parse_and_save_device_data(data_string):
     """
     try:
         # Remove trailing `_` and split by `$`
+        #print(data_string)
         data_parts = data_string.rstrip('_').split('$')
+        #print(data_parts)
+        #print(len(data_parts))
         
         if len(data_parts) < 6:
             raise ValueError("Incomplete data received.")
@@ -73,6 +76,10 @@ def parse_and_save_device_data(data_string):
         
         # Find device by DIN
         device = Device.objects.filter(din=device_din).first()
+
+        if not device:
+            print(f"Device with DIN {device_din} not found.")  # Debugging log
+            return None  # Exit early if no device is found
 
         # Save the data in the DeviceAuditLog
         audit_log = DeviceAuditLog.objects.create(

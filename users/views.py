@@ -63,15 +63,17 @@ class TokenRefreshView(APIView):
 
 
 
-class CropListCreateView(APIView):
-    permission_classes = [IsAdminUser]
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAdminUser
 
+class CropListCreateView(APIView):
     def get(self, request, *args, **kwargs):
         """Retrieve all crops"""
         crops = Crop.objects.all()
         serializer = CropSerializer(crops, many=True)
         return Response(serializer.data)
 
+    @permission_classes([IsAdminUser])
     def post(self, request, *args, **kwargs):
         """Create new crops"""
         crops_data = request.data  # Directly expecting a list of crops
