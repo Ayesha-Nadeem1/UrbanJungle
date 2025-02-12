@@ -106,11 +106,11 @@ from config import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # or your database engine
-        'NAME': 'Urban_Jungle',
-        'USER': 'admin',
+        'NAME': 'urban2',
+        'USER': 'postgres',
         'PASSWORD': 'ATmega32u',
-        'HOST': 'localhost',
-        'PORT': '',
+        'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
+        'PORT': '5432',
     }
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
