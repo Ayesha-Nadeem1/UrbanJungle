@@ -16,7 +16,9 @@ from .views import (
     UserTodoListView,
     MarkTodoDoneView,
     TokenRefreshView,
-    ReceiveDeviceData
+    ReceiveDeviceData,
+    AdminLoginView,
+    AdminSignupView
     )
 
 urlpatterns = [
@@ -24,6 +26,10 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Admin signup and login URLs
+    path('admin/signup/', AdminSignupView.as_view(), name='admin-signup'),
+    path('admin/login/', AdminLoginView.as_view(), name='admin-login'),
 
     #crop
     path('crops/', CropListCreateView.as_view(), name='crop-list-create'),

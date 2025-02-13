@@ -43,6 +43,39 @@ class LoginView(APIView):
         tokens = get_tokens_for_user(user)
         return Response({'tokens': tokens}, status=status.HTTP_200_OK)
     
+
+class AdminSignupView(APIView):
+    def post(self, request):
+        data = request.data
+        data['is_admin'] = True  # Automatically set is_admin to True for admin users
+
+        # Create the admin user with the modified data
+        serializer = UserSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Admin user registered successfully'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminLoginView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not user.is_admin:
+            return Response({'error': 'Not an admin user'}, status=status.HTTP_403_FORBIDDEN)
+
+        if not check_password(password, user.password):
+            return Response({'error': 'Invalid username or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        tokens = get_tokens_for_user(user)
+        return Response({'tokens': tokens}, status=status.HTTP_200_OK)
+
+
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import generate_access_token, decode_token
 
