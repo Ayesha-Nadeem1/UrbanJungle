@@ -21,6 +21,8 @@ class BaseAuthenticatedConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         """Remove the user from the WebSocket group on disconnect."""
+        if not hasattr(self, "group_name"):
+            self.group_name = self.get_group_name()
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def authenticate_user(self):
