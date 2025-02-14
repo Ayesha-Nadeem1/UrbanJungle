@@ -3,7 +3,12 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class PlantStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Accept the WebSocket connection
+        # Group name based on device ID (used for plant status)
+        device_id = self.scope['url_route']['kwargs']['device_id']
+        self.group_name = f"plant_status_{device_id}"
+
+        # Add the device to the group
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
