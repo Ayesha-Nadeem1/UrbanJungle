@@ -31,7 +31,8 @@ jobs:
           port: 22
           script: |
             cd UrbanJungle
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main  # Ensures the latest code is deployed
             source venv/bin/activate
             pip install -r requirements.txt
             
