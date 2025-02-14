@@ -52,24 +52,30 @@ def notify_due_tasks():
     today = date.today()
     due_tasks = Todo.objects.filter(due_date=today, status='pending')
 
-    for task in due_tasks:
-        user_id = task.created_by.id
-        task_data = {
-            'id': task.id,
-            'description': task.task_description,
-            'priority': task.priority,
-            'due_date': str(task.due_date),
-            'status': task.status,
-        }
+    channel_layer = get_channel_layer()  # Get the channel layer instance
 
-        # Broadcast the task notification to WebSocket
-        async_to_sync(channel_layer.group_send)(
-            f"user_notifications_{user_id}",  # Group name based on user ID
-            {
-                'type': 'send_task_notification',
-                'data': task_data,
+    for task in due_tasks:
+        # Ensure you have the user who created the task
+        user_id = task.created_for_device.user.id if task.created_for_device else None
+
+        # Continue if user is found
+        if user_id:
+            task_data = {
+                'id': task.id,
+                'description': task.task_description,
+                'priority': task.priority,
+                'due_date': str(task.due_date),
+                'status': task.status,
             }
-        )
+
+            # Broadcast the task notification to the WebSocket group (based on user ID)
+            async_to_sync(channel_layer.group_send)(
+                f"user_notifications_{user_id}",  # Group name based on user ID
+                {
+                    'type': 'send_task_notification',
+                    'data': task_data,
+                }
+            )
 
 @shared_task
 def send_harvest_notifications():
