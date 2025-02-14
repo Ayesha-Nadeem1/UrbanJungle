@@ -215,3 +215,8 @@ CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_BACKEND = 'django-db'  # For storing task results
 CELERY_RESULT_BACKEND = 'redis://server-redis:6379/0'
 CELERY_TIMEZONE = 'UTC'
+
+CSP_CONNECT_SRC = ["'self'", "ws://13.60.105.165:8000"]
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_FRAME_ANCESTORS = ["'self'"]
+
