@@ -108,22 +108,22 @@ WSGI_APPLICATION = "UrbanJungle.wsgi.application"
 from config import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',  # or your database engine
-    #     'NAME': 'urban2',
-    #     'USER': 'postgres',
-    #     'PASSWORD': 'ATmega32u',
-    #     'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
-    #     'PORT': '5432',
-    # },
-        'default': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',  # or your database engine
-        'NAME': DB_NAME,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
-    }
+        'NAME': 'urban2',
+        'USER': 'postgres',
+        'PASSWORD': 'ATmega32u',
+        'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
+        'PORT': '5432',
+    },
+    #     'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',  # or your database engine
+    #     'NAME': DB_NAME,
+    #     'USER': DB_USER,
+    #     'PASSWORD': DB_PASSWORD,
+    #     'HOST': DB_HOST,
+    #     'PORT': DB_PORT,
+    # }
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
