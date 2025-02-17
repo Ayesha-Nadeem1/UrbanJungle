@@ -26,6 +26,9 @@ SECRET_KEY = "django-insecure-or7h0i0(9o+@y^1#n&b6o4hk+jkpxymcuu+yt8-e*tqm&&#=xy
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+#CORS_ALLOWED_ORIGINS = ['*']
+
+CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework settings
 REST_FRAMEWORK = {
@@ -105,22 +108,22 @@ WSGI_APPLICATION = "UrbanJungle.wsgi.application"
 from config import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # or your database engine
-        'NAME': 'urban2',
-        'USER': 'postgres',
-        'PASSWORD': 'ATmega32u',
-        'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
-        'PORT': '5432',
-    },
-    #     'default': {
+    # 'default': {
     #     'ENGINE': 'django.db.backends.postgresql',  # or your database engine
-    #     'NAME': DB_NAME,
-    #     'USER': DB_USER,
-    #     'PASSWORD': DB_PASSWORD,
-    #     'HOST': DB_HOST,
-    #     'PORT': DB_PORT,
-    # }
+    #     'NAME': 'urban2',
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'ATmega32u',
+    #     'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
+    #     'PORT': '5432',
+    # },
+        'default': {
+        'ENGINE': 'django.db.backends.postgresql',  # or your database engine
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
+    }
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
@@ -210,11 +213,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Celery Configuration
-CELERY_BROKER_URL = 'redis://server-redis:6379/0'
+CELERY_BROKER_URL = 'redis://redis-server:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_BACKEND = 'django-db'  # For storing task results
-CELERY_RESULT_BACKEND = 'redis://server-redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
 CSP_CONNECT_SRC = ["'self'", "ws://13.60.105.165:8000"]

@@ -125,9 +125,9 @@ def update_pod_status():
         harvest_start_date__lte=today,
         harvest_end_date__gte=today
     )
-    # print("Pods in Harvesting Stage:")
-    # for pod in pods_in_harvesting:
-    #     print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Harvest Start Date: {pod.harvest_start_date}, Harvest End Date: {pod.harvest_end_date}")
+    print("Pods in Harvesting Stage:")
+    for pod in pods_in_harvesting:
+        print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Harvest Start Date: {pod.harvest_start_date}, Harvest End Date: {pod.harvest_end_date}")
 
     pods_in_harvesting.update(status="Harvesting")
 

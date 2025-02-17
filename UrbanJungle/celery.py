@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
+from celery.schedules import crontab
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'UrbanJungle.settings')
@@ -8,17 +9,44 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'UrbanJungle.settings')
 app = Celery('UrbanJungle')
 
 # Configure Celery to use Redis as the broker
-app.conf.broker_url = 'redis://redis:6379/0'  # 'redis' is the service name in your docker-compose
+app.conf.broker_url = 'redis://redis:6379/0'  # Update if necessary
 
-# Using a string here means the worker doesn't have to serialize
-# the configuration object to child processes.
-# Namespace 'CELERY' means all celery-related config keys
-# should have a `CELERY_` prefix.
+# Load task modules from all registered Django app configs
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Load task modules from all registered Django app configs.
+# Automatically discover tasks in all registered Django apps
 app.autodiscover_tasks()
 
+# Configure Celery Beat scheduler
+app.conf.beat_scheduler = 'django_celery_beat.schedulers.DatabaseScheduler'
+
+# Celery Beat Schedule Configuration
+app.conf.beat_schedule = {
+    'notify-fruiting-stage': {
+        'task': 'your_app.tasks.notify_fruiting_stage',  # Replace 'your_app' with your actual app name
+        'schedule': crontab(minute=0, hour='*'),  # Runs every day at 8:00 AM
+    },
+    'notify-due-tasks': {
+        'task': 'your_app.tasks.notify_due_tasks',  # Replace 'your_app' with your actual app name
+        'schedule': crontab(minute=0, hour='*'),  # Runs every day at 9:00 AM
+    },
+    'send-harvest-notifications': {
+        'task': 'your_app.tasks.send_harvest_notifications',  # Replace 'your_app' with your actual app name
+        'schedule': crontab(minute=0, hour='*'),  # Runs every day at 12:00 PM
+    },
+    'update-pod-status': {
+        'task': 'your_app.tasks.update_pod_status',  # Replace 'your_app' with your actual app name
+        'schedule': crontab(minute=0, hour='*'),  # Runs every day at 5:00 AM
+    },
+    'check-pods-for-harvest': {
+        'task': 'your_app.tasks.check_pods_for_harvest',  # Replace 'your_app' with your actual app name
+        'schedule': crontab(minute=0, hour='*'),  # Runs every day at 6:00 AM
+    },
+    'check-past-logs-for-abnormalities': {
+        'task': 'your_app.tasks.check_past_logs_for_abnormalities',  # Replace 'your_app' with your actual app name
+        'schedule': crontab(minute=0, hour='*'),  # Runs every hour
+    },
+}
 
 @app.task(bind=True)
 def debug_task(self):

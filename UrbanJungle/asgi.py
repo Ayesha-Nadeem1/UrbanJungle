@@ -4,7 +4,8 @@ from django.conf import settings
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from channels.middleware.base import BaseMiddleware
+from channels.middleware import BaseMiddleware
+
 from users.routing import websocket_urlpatterns
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import UntypedToken
