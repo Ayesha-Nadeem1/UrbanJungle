@@ -37,14 +37,19 @@ jobs:
             pip install -r requirements.txt
             
             # Apply database migrations
-            python manage.py makemigrations
-            python manage.py migrate
+            python manage.py makemigrations --noinput
+            python manage.py migrate --noinput
             
-            # Collect static files (optional)
+            # Collect static files
             python manage.py collectstatic --noinput
             
             # Restart services
             sudo systemctl restart nginx
             sudo systemctl restart gunicorn
+            
+            # Restart Redis, Celery, and Celery Beat
+            sudo systemctl restart redis
+            sudo systemctl restart celery
+            sudo systemctl restart celery-beat
 
 
