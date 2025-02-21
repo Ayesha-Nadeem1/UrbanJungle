@@ -23,27 +23,27 @@ app.conf.beat_scheduler = 'django_celery_beat.schedulers.DatabaseScheduler'
 # Celery Beat Schedule Configuration
 app.conf.beat_schedule = {
     'notify-fruiting-stage': {
-        'task': 'your_app.tasks.notify_fruiting_stage',  # Replace 'your_app' with your actual app name
+        'task': 'users.tasks.notify_fruiting_stage',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  # Runs every day at 8:00 AM
     },
     'notify-due-tasks': {
-        'task': 'your_app.tasks.notify_due_tasks',  # Replace 'your_app' with your actual app name
+        'task': 'users.tasks.notify_due_tasks',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  # Runs every day at 9:00 AM
     },
     'send-harvest-notifications': {
-        'task': 'your_app.tasks.send_harvest_notifications',  # Replace 'your_app' with your actual app name
+        'task': 'users.tasks.send_harvest_notifications',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  # Runs every day at 12:00 PM
     },
     'update-pod-status': {
-        'task': 'your_app.tasks.update_pod_status',  # Replace 'your_app' with your actual app name
+        'task': 'users.tasks.update_pod_status',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  # Runs every day at 5:00 AM
     },
     'check-pods-for-harvest': {
-        'task': 'your_app.tasks.check_pods_for_harvest',  # Replace 'your_app' with your actual app name
+        'task': 'users.tasks.check_pods_for_harvest',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  # Runs every day at 6:00 AM
     },
     'check-past-logs-for-abnormalities': {
-        'task': 'your_app.tasks.check_past_logs_for_abnormalities',  # Replace 'your_app' with your actual app name
+        'task': 'users.tasks.check_past_logs_for_abnormalities',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  # Runs every hour
     },
 }
