@@ -108,7 +108,7 @@ WSGI_APPLICATION = "UrbanJungle.wsgi.application"
 from config import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 DATABASES = {
-    'default': {
+     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # or your database engine
         'NAME': 'urban2',
         'USER': 'postgres',
@@ -156,7 +156,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
-
+CELERY_ENABLE_UTC = True
 USE_I18N = True
 
 USE_TZ = True
@@ -166,6 +166,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
