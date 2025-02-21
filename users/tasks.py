@@ -9,6 +9,13 @@ from django.db.models import Q
 
 channel_layer = get_channel_layer()
 
+
+# @shared_task
+# def test_task():
+#     print("Task executed!")
+#     return "Success"
+
+
 @shared_task
 def notify_fruiting_stage():
     """
@@ -112,9 +119,9 @@ def update_pod_status():
         fruiting_date__lte=today,
         harvest_start_date__gt=today
     )
-    # print("Pods in Fruiting Stage:")
-    # for pod in pods_in_fruiting:
-    #     print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Fruiting Date: {pod.fruiting_date}, Harvest Start Date: {pod.harvest_start_date}")
+    print("Pods in Fruiting Stage:")
+    for pod in pods_in_fruiting:
+         print(f"Pod ID: {pod.id}, Crop ID: {pod.crop_id}, Fruiting Date: {pod.fruiting_date}, Harvest Start Date: {pod.harvest_start_date}")
 
     pods_in_fruiting.update(status="Fruiting")
 

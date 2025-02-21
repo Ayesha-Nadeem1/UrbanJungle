@@ -18,7 +18,9 @@ from .views import (
     TokenRefreshView,
     ReceiveDeviceData,
     AdminLoginView,
-    AdminSignupView
+    AdminSignupView,
+    GetUserDataView,
+    UpdateUserInfoView
     )
 
 urlpatterns = [
@@ -26,6 +28,10 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    #user
+    path('get-user-data/', GetUserDataView.as_view(), name='get_user_data'),
+    path('update-user-info/', UpdateUserInfoView.as_view(), name='update_user_info'),
 
     # Admin signup and login URLs
     path('admin/signup/', AdminSignupView.as_view(), name='admin-signup'),

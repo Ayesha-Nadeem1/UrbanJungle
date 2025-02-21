@@ -2,38 +2,40 @@ from rest_framework import serializers
 from .models import User, Crop, Device,Pod
 from django.contrib.auth.hashers import make_password, check_password
 
+from rest_framework import serializers
+from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
-    # Explicitly specify the password field to write-only for secure handling
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    profile_picture = serializers.ImageField(required=False, allow_null=True)  # New field
 
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'password', 'email', 'name', 'address', 'contact_number', 'is_admin'
+            'id', 'username', 'password', 'email', 'name', 
+            'address', 'contact_number', 'is_admin', 'profile_picture'
         ]
         extra_kwargs = {
-            'password': {'write_only': True},  # Ensure password is write-only
+            'password': {'write_only': True},
         }
 
     def create(self, validated_data):
-        """Override the create method to hash the password."""
         password = validated_data.pop('password')
         user = User(**validated_data)
-        user.set_password(password)  # Hash the password
+        user.set_password(password)
         user.save()
         return user
 
     def update(self, instance, validated_data):
-        """Override the update method to handle password securely."""
         password = validated_data.pop('password', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         if password:
-            instance.set_password(password)  # Hash the password
+            instance.set_password(password)
         instance.save()
         return instance
+
     
 class CropSerializer(serializers.ModelSerializer):
     class Meta:

@@ -9,6 +9,8 @@ from .permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+import jwt
+from django.conf import settings
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -43,7 +45,49 @@ class LoginView(APIView):
         tokens = get_tokens_for_user(user)
         return Response({'tokens': tokens}, status=status.HTTP_200_OK)
     
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
+class GetUserDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        token = request.headers.get('Authorization', '').split(' ')[1]
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            user = User.objects.get(id=payload['user_id'])
+            serializer = UserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except (jwt.ExpiredSignatureError, jwt.DecodeError, User.DoesNotExist):
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class UpdateUserInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        token = request.headers.get('Authorization', '').split(' ')[1]
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            authenticated_user_id = payload['user_id']
+
+            # Ensure the user exists
+            user = User.objects.get(id=authenticated_user_id)
+
+            # Check if the user is trying to update their own data
+            if 'id' in request.data and str(request.data['id']) != str(authenticated_user_id):
+                return Response({'error': 'You are not allowed to update this user.'}, status=status.HTTP_403_FORBIDDEN)
+
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except (jwt.ExpiredSignatureError, jwt.DecodeError, User.DoesNotExist):
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_401_UNAUTHORIZED)
+        
 class AdminSignupView(APIView):
     def post(self, request):
         data = request.data
