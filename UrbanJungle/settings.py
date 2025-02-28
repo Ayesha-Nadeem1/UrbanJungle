@@ -241,3 +241,4 @@ CSP_CONNECT_SRC = ["'self'", "ws://13.60.105.165:8000"]
 CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_ANCESTORS = ["'self'"]
 
+#trigger action
