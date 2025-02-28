@@ -228,6 +228,15 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
+ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.179.133']
+
+# Enable secure proxy headers
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+
 CSP_CONNECT_SRC = ["'self'", "ws://13.60.105.165:8000"]
 CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_ANCESTORS = ["'self'"]
