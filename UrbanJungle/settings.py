@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -166,7 +167,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
-import os
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -228,7 +230,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
-ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.179.133']
+ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.206.225']
 
 # Enable secure proxy headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -237,7 +239,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
 
-CSP_CONNECT_SRC = ["'self'", "ws://13.60.105.165:8000"]
+CSP_CONNECT_SRC = ["'self'", "ws://13.60.206.225:8000"]
 CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_ANCESTORS = ["'self'"]
 
