@@ -22,8 +22,7 @@ jobs:
           port: 22
           script: |
             # Navigate to project folder (if exists) or clone it
-            cd /home/urbanjungle || git clone https://github.com/yourusername/yourrepo.git /home/urbanjungle
-            cd /home/urbanjungle
+            cd /root/UrbanJungle
             git pull origin main
 
             # Create Virtual Environment (if not exists)
