@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-or7h0i0(9o+@y^1#n&b6o4hk+jkpxymcuu+yt8-e*tqm&&#=xy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+
 #CORS_ALLOWED_ORIGINS = ['*']
 
 CORS_ALLOW_CREDENTIALS = True
@@ -230,7 +230,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
-#ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.206.225']
+ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.206.225','165.22.5.217']
 
 # Enable secure proxy headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
