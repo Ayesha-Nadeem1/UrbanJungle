@@ -230,7 +230,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
-ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.206.225','165.22.5.217']
+ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', '13.60.206.225','165.22.5.217','127.0.0.1']
 
 # Enable secure proxy headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
