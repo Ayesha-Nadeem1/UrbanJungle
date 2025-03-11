@@ -110,14 +110,22 @@ WSGI_APPLICATION = "UrbanJungle.wsgi.application"
 from config import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 DATABASES = {
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # or your database engine
-        'NAME': 'urban2',
-        'USER': 'postgres',
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'urbanjungle_db',
+        'USER': 'admin',
         'PASSWORD': 'ATmega32u',
-        'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
-        'PORT': '5432',
+        'HOST': 'localhost',
+        'PORT': '',
     },
+    #  'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',  # or your database engine
+    #     'NAME': 'urban2',
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'ATmega32u',
+    #     'HOST': 'urban2.ct8sygu0wog4.eu-north-1.rds.amazonaws.com',
+    #     'PORT': '5432',
+    # },
     #     'default': {
     #     'ENGINE': 'django.db.backends.postgresql',  # or your database engine
     #     'NAME': DB_NAME,
@@ -168,7 +176,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles/")
 
 from pathlib import Path
 
