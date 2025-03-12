@@ -20,7 +20,12 @@ from .views import (
     AdminLoginView,
     AdminSignupView,
     GetUserDataView,
-    UpdateUserInfoView
+    UpdateUserInfoView,
+    CategoryListCreateView, CategoryRetrieveUpdateDeleteView,
+    ProductListCreateView, ProductRetrieveUpdateDeleteView,
+    CartListCreateView, CartItemListCreateView, CartItemRetrieveUpdateDeleteView,
+    OrderListCreateView, OrderRetrieveUpdateDeleteView,
+    OrderItemListView, OrderItemRetrieveUpdateDeleteView
     )
 
 urlpatterns = [
@@ -60,5 +65,26 @@ urlpatterns = [
     path('todos/<int:pk>/', TodoRetrieveUpdateDeleteView.as_view(), name='todo-detail'),
     path('todos/list-todos/', UserTodoListView.as_view(), name='user_todos'),
     path('todos/mark-done/<int:pk>/', MarkTodoDoneView.as_view(), name='mark_todo_done'),
+
+    # Category URLs
+    path('categories/', CategoryListCreateView.as_view(), name='category-list-create'),
+    path('categories/<int:category_id>/', CategoryRetrieveUpdateDeleteView.as_view(), name='category-detail'),
+
+    # Product URLs
+    path('products/', ProductListCreateView.as_view(), name='product-list-create'),
+    path('products/<int:product_id>/', ProductRetrieveUpdateDeleteView.as_view(), name='product-detail'),
+
+    # Cart URLs
+    path('cart/', CartListCreateView.as_view(), name='cart'),
+    path('cart/items/', CartItemListCreateView.as_view(), name='cart-item-list-create'),
+    path('cart/items/<int:cart_item_id>/', CartItemRetrieveUpdateDeleteView.as_view(), name='cart-item-detail'),
+
+    # Order URLs
+    path('orders/', OrderListCreateView.as_view(), name='order-list-create'),
+    path('orders/<int:order_id>/', OrderRetrieveUpdateDeleteView.as_view(), name='order-detail'),
+
+    # Order Items URLs
+    path('orders/<int:order_id>/items/', OrderItemListView.as_view(), name='order-item-list'),
+    path('order-items/<int:order_item_id>/', OrderItemRetrieveUpdateDeleteView.as_view(), name='order-item-detail'),
 ]
 
