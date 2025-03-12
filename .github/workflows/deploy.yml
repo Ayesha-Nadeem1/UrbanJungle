@@ -22,11 +22,11 @@ jobs:
           port: 22
           script: |
             # Navigate to project folder (if exists) or clone it
-            cd /root/UrbanJungle
+            cd /home/UrbanJungle
             git pull origin main
 
             # Create Virtual Environment (if not exists)
-            python3 -m venv venv
+            # python3 -m venv venv
             source venv/bin/activate
 
             # Install dependencies
