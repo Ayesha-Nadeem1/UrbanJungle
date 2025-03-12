@@ -584,3 +584,306 @@ class ReceiveDeviceData(APIView):
 #             return Response({"message": f"Pod {pod_id} deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 #         except Pod.DoesNotExist:
 #             return Response({"error": "Pod not found in this device."}, status=status.HTTP_404_NOT_FOUND)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from .models import Category, Product, Cart, CartItem, Order, OrderItem
+from .serializers import (
+    CategorySerializer, ProductSerializer, CartSerializer, 
+    CartItemSerializer, OrderSerializer, OrderItemSerializer
+)
+
+# ---------------- CATEGORY VIEWS ----------------
+class CategoryListCreateView(APIView):
+    def get(self, request):
+        """Retrieve all categories"""
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Create a new category"""
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CategoryRetrieveUpdateDeleteView(APIView):
+    def get_object(self, category_id):
+        try:
+            return Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            return None
+
+    def get(self, request, category_id):
+        """Retrieve a category by ID"""
+        category = self.get_object(category_id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CategorySerializer(category)
+        return Response(serializer.data)
+
+    def put(self, request, category_id):
+        """Update a category"""
+        category = self.get_object(category_id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CategorySerializer(category, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, category_id):
+        """Delete a category"""
+        category = self.get_object(category_id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------- PRODUCT VIEWS ----------------
+class ProductListCreateView(APIView):
+    def get(self, request):
+        """Retrieve all products"""
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Create a new product"""
+        serializer = ProductSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ProductRetrieveUpdateDeleteView(APIView):
+    def get_object(self, product_id):
+        try:
+            return Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return None
+
+    def get(self, request, product_id):
+        """Retrieve a product by ID"""
+        product = self.get_object(product_id)
+        if not product:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProductSerializer(product)
+        return Response(serializer.data)
+
+    def put(self, request, product_id):
+        """Update a product"""
+        product = self.get_object(product_id)
+        if not product:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ProductSerializer(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, product_id):
+        """Delete a product"""
+        product = self.get_object(product_id)
+        if not product:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------- CART VIEWS ----------------
+class CartListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Retrieve cart for logged-in user"""
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Add product to cart"""
+        serializer = CartItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        """Clear user's cart"""
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+        cart.cart_items.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------- ORDER VIEWS ----------------
+class OrderListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Retrieve orders for logged-in user"""
+        orders = Order.objects.filter(user=request.user)
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Create a new order"""
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderRetrieveUpdateDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, order_id):
+        try:
+            return Order.objects.get(id=order_id, user=self.request.user)
+        except Order.DoesNotExist:
+            return None
+
+    def get(self, request, order_id):
+        """Retrieve an order by ID"""
+        order = self.get_object(order_id)
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    def put(self, request, order_id):
+        """Update an order"""
+        order = self.get_object(order_id)
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderSerializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, order_id):
+        """Cancel an order"""
+        order = self.get_object(order_id)
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class CartItemListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Retrieve all items in the user's cart"""
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CartItemSerializer(cart.items.all(), many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Add a product to the cart"""
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        request.data["cart"] = cart.id  # Associate cart with the logged-in user
+        serializer = CartItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CartItemRetrieveUpdateDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, cart_item_id, user):
+        try:
+            return CartItem.objects.get(id=cart_item_id, cart__user=user)
+        except CartItem.DoesNotExist:
+            return None
+
+    def get(self, request, cart_item_id):
+        """Retrieve a specific cart item"""
+        cart_item = self.get_object(cart_item_id, request.user)
+        if not cart_item:
+            return Response({"error": "Cart item not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CartItemSerializer(cart_item)
+        return Response(serializer.data)
+
+    def put(self, request, cart_item_id):
+        """Update the quantity of a cart item"""
+        cart_item = self.get_object(cart_item_id, request.user)
+        if not cart_item:
+            return Response({"error": "Cart item not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, cart_item_id):
+        """Remove a cart item"""
+        cart_item = self.get_object(cart_item_id, request.user)
+        if not cart_item:
+            return Response({"error": "Cart item not found"}, status=status.HTTP_404_NOT_FOUND)
+        cart_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class OrderItemListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, order_id):
+        """Retrieve all items for a specific order"""
+        order = Order.objects.filter(id=order_id, user=request.user).first()
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderItemSerializer(order.items.all(), many=True)
+        return Response(serializer.data)
+
+
+class OrderItemRetrieveUpdateDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, order_item_id, user):
+        try:
+            return OrderItem.objects.get(id=order_item_id, order__user=user)
+        except OrderItem.DoesNotExist:
+            return None
+
+    def get(self, request, order_item_id):
+        """Retrieve a specific order item"""
+        order_item = self.get_object(order_item_id, request.user)
+        if not order_item:
+            return Response({"error": "Order item not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderItemSerializer(order_item)
+        return Response(serializer.data)
+
+    def put(self, request, order_item_id):
+        """Update an order item (Admins only)"""
+        order_item = self.get_object(order_item_id, request.user)
+        if not order_item:
+            return Response({"error": "Order item not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderItemSerializer(order_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, order_item_id):
+        """Remove an order item (Admins only)"""
+        order_item = self.get_object(order_item_id, request.user)
+        if not order_item:
+            return Response({"error": "Order item not found"}, status=status.HTTP_404_NOT_FOUND)
+        order_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
