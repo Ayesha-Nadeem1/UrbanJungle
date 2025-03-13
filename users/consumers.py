@@ -9,9 +9,10 @@ from jwt.exceptions import ExpiredSignatureError
 from jwt.exceptions import InvalidTokenError
 from django.conf import settings
 
+def get_user_model_instance():
+    return get_user_model()
 
-
-User = get_user_model()
+User = get_user_model_instance()
 
 class BaseAuthenticatedConsumer(AsyncWebsocketConsumer):
     async def connect(self):
