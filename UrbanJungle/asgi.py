@@ -1,4 +1,4 @@
-import os
+import os,django
 import jwt
 from django.conf import settings
 from django.core.asgi import get_asgi_application
@@ -16,6 +16,7 @@ from asgiref.sync import sync_to_async
 User = get_user_model()
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "UrbanJungle.settings")
+django.setup()
 
 class JWTAuthMiddleware(BaseMiddleware):
     """
