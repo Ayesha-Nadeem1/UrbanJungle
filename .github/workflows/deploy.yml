@@ -23,6 +23,8 @@ jobs:
           script: |
             # Navigate to project folder (if exists) or clone it
             cd /home/UrbanJungle
+            git reset --hard HEAD  # Discard all local changes
+            git clean -fd          # Remove untracked files
             git pull origin main
 
             # Create Virtual Environment (if not exists)
