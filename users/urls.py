@@ -25,7 +25,7 @@ from .views import (
     ProductListCreateView, ProductRetrieveUpdateDeleteView,
     CartListCreateView, CartItemListCreateView, CartItemRetrieveUpdateDeleteView,
     OrderListCreateView, OrderRetrieveUpdateDeleteView,
-    OrderItemListView, OrderItemRetrieveUpdateDeleteView
+    OrderItemListView, OrderItemRetrieveUpdateDeleteView, AddressListCreateView, AddressUpdateDeleteView
     )
 
 urlpatterns = [
@@ -86,5 +86,9 @@ urlpatterns = [
     # Order Items URLs
     path('orders/<int:order_id>/items/', OrderItemListView.as_view(), name='order-item-list'),
     path('order-items/<int:order_item_id>/', OrderItemRetrieveUpdateDeleteView.as_view(), name='order-item-detail'),
+
+    #address urls
+    path('addresses/', AddressListCreateView.as_view(), name='address-list-create'),
+    path('addresses/<int:address_id>/', AddressUpdateDeleteView.as_view(), name='address-update-delete'),
 ]
 

@@ -7,7 +7,7 @@ class User(AbstractUser):
     password = models.CharField(max_length=128)  # Explicitly redefine password
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255, blank=True, null=True)  # Add name field
-    address = models.TextField(blank=True, null=True)
+    #address = models.TextField(blank=True, null=True)
     contact_number = models.CharField(max_length=15, blank=True, null=True)
     is_admin = models.BooleanField(default=False)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)  # New field
@@ -15,6 +15,21 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+    
+class Address(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="addresses")
+    full_name = models.CharField(max_length=255)
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    country = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    is_selected = models.BooleanField(default=False)  # Store as boolean, convert in views
+
+    def __str__(self):
+        return f"{self.full_name}, {self.address}, {self.city}"
+
 
 
 # Device Model
@@ -191,15 +206,20 @@ class Category(models.Model):
         return self.name
 
 class Product(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.IntegerField(default=0)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    name = models.CharField(max_length=255)  # Required
+    type = models.CharField(max_length=255)  # Required
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')  # Required
+    description = models.TextField(blank=True, null=True)  # Optional
+    price = models.DecimalField(max_digits=10, decimal_places=2)  # Required (Dollars)
+    picture = models.URLField(max_length=500)  # Required (Image URL)
+    stock = models.IntegerField(default=0)  # Required
+    delivery_charges = models.DecimalField(max_digits=10, decimal_places=2)  # Required
+    discounted_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # Optional
+    is_discounted = models.BooleanField(default=False)  # Required (Flag for discount)
 
     def __str__(self):
         return self.name
-
+    
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

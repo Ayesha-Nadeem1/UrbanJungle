@@ -124,103 +124,6 @@ class TodoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Todo
         fields = '__all__'
-# class PodSerializer(serializers.ModelSerializer):
-#     crop_name = serializers.ReadOnlyField(source='crop.name')  # Include crop name for easy display
-
-#     class Meta:
-#         model = Pod
-#         fields = ['id', 'device', 'crop', 'crop_name', 'custom_name']
-
-#     def create(self, validated_data):
-#         """Create a new pod"""
-#         device = validated_data.get('device')
-#         crop = validated_data.get('crop')
-#         custom_name = validated_data.get('custom_name')
-
-#         # Check for existing pods with the same crop and group them
-#         existing_pod = Pod.objects.filter(device=device, crop=crop).first()
-#         if existing_pod:
-#             # Update the custom_name JSON for existing pod
-#             if not existing_pod.custom_name:
-#                 existing_pod.custom_name = {}
-#             existing_pod.custom_name.update(custom_name)
-#             existing_pod.save()
-#             return existing_pod
-#         else:
-#             return Pod.objects.create(**validated_data)
-
-
-# class PodSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Pod
-#         fields = ['id', 'device', 'crop', 'custom_name', 'planting_date', 'harvest_date']
-#         read_only_fields = ['harvest_date']
-
-#     def validate(self, data):
-#         device = data.get('device')
-#         crop = data.get('crop')
-#         custom_name = data.get('custom_name')
-
-#         # Get all existing pods for this device
-#         existing_pods = Pod.objects.filter(device=device)
-
-#         # Check for conflicting crops
-#         conflicting_pods = existing_pods.exclude(crop=crop)
-#         if conflicting_pods.exists():
-#             for pod_name in custom_name.keys():
-#                 for pod in conflicting_pods:
-#                     if pod_name in pod.custom_name:
-#                         raise serializers.ValidationError(
-#                             f"Pod '{pod_name}' in this device is already planted with another crop ({pod.crop.name})."
-#                         )
-
-#         # Check if the provided pod names are already occupied with another crop
-#         for pod_name in custom_name.keys():
-#             for pod in existing_pods:
-#                 if pod_name in pod.custom_name and pod.crop != crop:
-#                     raise serializers.ValidationError(
-#                         f"Pod '{pod_name}' is already occupied by another crop ({pod.crop.name})."
-#                     )
-
-#         return data
-
-#     def create(self, validated_data):
-#         device = validated_data.get('device')
-#         crop = validated_data.get('crop')
-#         custom_name = validated_data.get('custom_name')
-#         planting_date = validated_data.get('planting_date')
-
-#         # Check if there's already an entry for the same device and crop
-#         existing_pod = Pod.objects.filter(device=device, crop=crop).first()
-#         if existing_pod:
-#             # Combine custom names
-#             existing_custom_name = existing_pod.custom_name or {}
-#             existing_custom_name.update(custom_name)
-#             existing_pod.custom_name = existing_custom_name
-#             existing_pod.save()
-#             return existing_pod
-
-#         # Calculate harvest_date based on planting_date and crop life cycle
-#         if planting_date:
-#             validated_data['harvest_date'] = planting_date + timedelta(days=crop.life_cycle)
-
-#         # Create a new record if no existing entry is found
-#         return super().create(validated_data)
-
-#     def update(self, instance, validated_data):
-#         custom_name = validated_data.get('custom_name', instance.custom_name)
-#         planting_date = validated_data.get('planting_date', instance.planting_date)
-
-#         # Update custom names by merging the new ones with existing ones
-#         instance.custom_name.update(custom_name)
-
-#         # Update planting_date and recalculate harvest_date
-#         if planting_date:
-#             instance.planting_date = planting_date
-#             instance.harvest_date = planting_date + timedelta(days=instance.crop.life_cycle)
-
-#         instance.save()
-#         return instance
 
 from .models import DeviceAuditLog
 
@@ -230,7 +133,7 @@ class DeviceAuditLogSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 from rest_framework import serializers
-from .models import Category, Product, Cart, CartItem, Order, OrderItem
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Address
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -241,6 +144,12 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
+    def validate(self, data):
+        """Ensure consistency of discount fields"""
+        if data.get('is_discounted') and not data.get('discounted_price'):
+            raise serializers.ValidationError("Discounted price is required when is_discounted is true.")
+        return data
 
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -266,3 +175,8 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = '__all__'
 
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = '__all__'
+        read_only_fields = ['user']  

@@ -589,10 +589,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from .models import Category, Product, Cart, CartItem, Order, OrderItem
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Address
 from .serializers import (
     CategorySerializer, ProductSerializer, CartSerializer, 
-    CartItemSerializer, OrderSerializer, OrderItemSerializer
+    CartItemSerializer, OrderSerializer, OrderItemSerializer, AddressSerializer
 )
 
 # ---------------- CATEGORY VIEWS ----------------
@@ -652,7 +652,7 @@ class ProductListCreateView(APIView):
         """Retrieve all products"""
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """Create a new product"""
@@ -661,6 +661,7 @@ class ProductListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ProductRetrieveUpdateDeleteView(APIView):
     def get_object(self, product_id):
@@ -675,7 +676,7 @@ class ProductRetrieveUpdateDeleteView(APIView):
         if not product:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ProductSerializer(product)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, product_id):
         """Update a product"""
@@ -685,7 +686,7 @@ class ProductRetrieveUpdateDeleteView(APIView):
         serializer = ProductSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, product_id):
@@ -694,9 +695,8 @@ class ProductRetrieveUpdateDeleteView(APIView):
         if not product:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
         product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
+        return Response({"message": "Product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
 # ---------------- CART VIEWS ----------------
 class CartListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -887,3 +887,48 @@ class OrderItemRetrieveUpdateDeleteView(APIView):
         order_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class AddressListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """View all addresses of the authenticated user."""
+        addresses = Address.objects.filter(user=request.user)
+        serializer = AddressSerializer(addresses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Add a new address for the authenticated user."""
+        data = request.data.copy()
+        data['user'] = request.user.id  # Extract user ID from JWT token
+        serializer = AddressSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddressUpdateDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, address_id):
+        """Update an existing address."""
+        try:
+            address = Address.objects.get(id=address_id, user=request.user)
+        except Address.DoesNotExist:
+            return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AddressSerializer(address, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, address_id):
+        """Delete an address."""
+        try:
+            address = Address.objects.get(id=address_id, user=request.user)
+        except Address.DoesNotExist:
+            return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        address.delete()
+        return Response({"message": "Address deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
