@@ -43,6 +43,10 @@ jobs:
             python manage.py collectstatic --noinput
 
             # Restart services
+            sudo supervisorctl reread
+            sudo supervisorctl update
+            sudo supervisorctl start django
+
             sudo systemctl restart nginx
             sudo systemctl restart gunicorn
             sudo systemctl restart redis
