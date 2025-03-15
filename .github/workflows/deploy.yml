@@ -36,7 +36,7 @@ jobs:
             pip install -r requirements.txt
 
             # Run Migrations
-            python manage.py makemigrations --noinput
+            # python manage.py makemigrations --noinput
             python manage.py migrate --noinput
 
             # Collect static files
