@@ -7,7 +7,7 @@ class User(AbstractUser):
     password = models.CharField(max_length=128)  # Explicitly redefine password
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255, blank=True, null=True)  # Add name field
-    #address = models.TextField(blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
     contact_number = models.CharField(max_length=15, blank=True, null=True)
     is_admin = models.BooleanField(default=False)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)  # New field
