@@ -25,7 +25,7 @@ class Address(models.Model):
     postal_code = models.CharField(max_length=20)
     country = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=15)
-    is_selected = models.BooleanField(default=False)  # Store as boolean, convert in views
+    is_selected = models.BooleanField(default=False) 
 
     def __str__(self):
         return f"{self.full_name}, {self.address}, {self.city}"
@@ -228,6 +228,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    is_selected = models.BooleanField(default=False)
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
