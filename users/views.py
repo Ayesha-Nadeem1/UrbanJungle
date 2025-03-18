@@ -793,26 +793,45 @@ class CartItemListCreateView(APIView):
 
     # def post(self, request):
     #     """Add a product to the cart"""
+    #     print("Request data:", request.data)  # Debugging line
     #     cart, created = Cart.objects.get_or_create(user=request.user)
     #     request.data["cart"] = cart.id  # Associate cart with the logged-in user
+
     #     serializer = CartItemSerializer(data=request.data)
     #     if serializer.is_valid():
     #         serializer.save()
     #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+    #     print("Serializer errors:", serializer.errors)  # Debugging line
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def post(self, request):
-        """Add a product to the cart"""
-        print("Request data:", request.data)  # Debugging line
+        """Add a product to the cart or update quantity if it already exists"""
         cart, created = Cart.objects.get_or_create(user=request.user)
         request.data["cart"] = cart.id  # Associate cart with the logged-in user
 
-        serializer = CartItemSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        print("Serializer errors:", serializer.errors)  # Debugging line
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        product_id = request.data.get("product")
+        quantity = request.data.get("quantity", 1)
+
+        if not product_id:
+            return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the product is already in the cart
+        existing_item = CartItem.objects.filter(cart=cart, product_id=product_id).first()
+
+        if existing_item:
+            # Update quantity instead of creating a new entry
+            existing_item.quantity += quantity
+            existing_item.save()
+            serializer = CartItemSerializer(existing_item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            # Create new cart item
+            serializer = CartItemSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
