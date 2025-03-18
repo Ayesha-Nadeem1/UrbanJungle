@@ -246,7 +246,7 @@ class DeviceCreateRetrieveView(APIView):
                 {
                     "type": "send_device_notification",  # Calls method in WebSocket consumer
                     "data": {
-                        "message": f"New device '{device.name}' has been added!",
+                        "message": f"New device '{device.device_name}' has been added!",
                         "device_id": device.id,
                         "status": "success",
                     },
