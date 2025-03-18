@@ -208,25 +208,55 @@ class CropNamesView(APIView):
         crop_names = Crop.objects.values_list('name', flat=True)
         return Response({"crop_names": list(crop_names)}, status=200)
     
+# class DeviceCreateRetrieveView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, *args, **kwargs):
+#         """Create a new device"""
+#         # The owner of the device is automatically set as the authenticated user
+#         serializer = DeviceSerializer(data=request.data, context={'request': request})
+#         if serializer.is_valid():
+#             device = serializer.save(owner=request.user)
+#             return Response(DeviceSerializer(device).data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def get(self, request, *args, **kwargs):
+#         """Retrieve a list of devices for the authenticated user"""
+#         # Retrieve only devices belonging to the authenticated user (owner)
+#         devices = Device.objects.filter(owner=request.user)
+#         serializer = DeviceSerializer(devices, many=True)
+#         return Response(serializer.data)
+    
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 class DeviceCreateRetrieveView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        """Create a new device"""
-        # The owner of the device is automatically set as the authenticated user
-        serializer = DeviceSerializer(data=request.data, context={'request': request})
+        """Create a new device and send a WebSocket notification."""
+        serializer = DeviceSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             device = serializer.save(owner=request.user)
+
+            # Send WebSocket notification
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_device_notifications_{request.user.id}",  # Group name for user
+                {
+                    "type": "send_device_notification",  # Calls method in WebSocket consumer
+                    "data": {
+                        "message": f"New device '{device.name}' has been added!",
+                        "device_id": device.id,
+                        "status": "success",
+                    },
+                },
+            )
+
             return Response(DeviceSerializer(device).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def get(self, request, *args, **kwargs):
-        """Retrieve a list of devices for the authenticated user"""
-        # Retrieve only devices belonging to the authenticated user (owner)
-        devices = Device.objects.filter(owner=request.user)
-        serializer = DeviceSerializer(devices, many=True)
-        return Response(serializer.data)
-    
+
 class DeviceUpdateDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 

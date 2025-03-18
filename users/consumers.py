@@ -119,3 +119,12 @@ class HarvestNotificationConsumer(BaseAuthenticatedConsumer):
             "message": "Welcome to harvest notifications! This is a test message."
         }
         await self.send(text_data=json.dumps(dummy_message))  # Send dummy data to the client
+
+class DeviceNotificationConsumer(BaseAuthenticatedConsumer):
+    def get_group_name(self):
+        return f"user_device_notifications_{self.user.id}"
+
+    async def send_device_notification(self, event):
+        """Send a WebSocket notification when a new device is added."""
+        await self.send(text_data=json.dumps(event["data"]))
+
