@@ -152,9 +152,12 @@ class ProductSerializer(serializers.ModelSerializer):
         return data
 
 class CartItemSerializer(serializers.ModelSerializer):
+    is_selected = serializers.BooleanField(required=False)  # Make it writable
+
     class Meta:
         model = CartItem
         fields = '__all__'
+
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)

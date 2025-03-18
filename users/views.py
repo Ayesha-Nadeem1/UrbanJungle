@@ -811,21 +811,23 @@ class CartItemListCreateView(APIView):
 
         product_id = request.data.get("product")
         quantity = request.data.get("quantity", 1)
+        is_selected = request.data.get("is_selected", False)  # Default to False if missing
 
         if not product_id:
             return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if the product is already in the cart
+        # Check if the product already exists in the cart
         existing_item = CartItem.objects.filter(cart=cart, product_id=product_id).first()
 
         if existing_item:
-            # Update quantity instead of creating a new entry
+            # Update quantity and is_selected
             existing_item.quantity += quantity
+            existing_item.is_selected = is_selected  # Explicitly set is_selected
             existing_item.save()
             serializer = CartItemSerializer(existing_item)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            # Create new cart item
+            # Create a new cart item
             serializer = CartItemSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
