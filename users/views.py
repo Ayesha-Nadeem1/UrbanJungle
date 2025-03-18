@@ -791,15 +791,29 @@ class CartItemListCreateView(APIView):
         serializer = CartItemSerializer(cart.items.all(), many=True)
         return Response(serializer.data)
 
+    # def post(self, request):
+    #     """Add a product to the cart"""
+    #     cart, created = Cart.objects.get_or_create(user=request.user)
+    #     request.data["cart"] = cart.id  # Associate cart with the logged-in user
+    #     serializer = CartItemSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def post(self, request):
         """Add a product to the cart"""
+        print("Request data:", request.data)  # Debugging line
         cart, created = Cart.objects.get_or_create(user=request.user)
         request.data["cart"] = cart.id  # Associate cart with the logged-in user
+
         serializer = CartItemSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        print("Serializer errors:", serializer.errors)  # Debugging line
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class CartItemRetrieveUpdateDeleteView(APIView):
