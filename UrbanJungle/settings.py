@@ -234,11 +234,13 @@ EMAIL_HOST_PASSWORD = 'tghc jvmu fqhr vpyr'
 # MEDIA_ROOT = BASE_DIR / 'media'
 
 # Celery Configuration
-CELERY_BROKER_URL = 'redis://redis-server:6379/0'
+#CELERY_BROKER_URL = 'redis://redis-server:6379/0'
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_BACKEND = 'django-db'  # For storing task results
-CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
 ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', 'localhost','13.60.206.225','165.22.5.217','127.0.0.1']
