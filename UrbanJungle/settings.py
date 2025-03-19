@@ -230,8 +230,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'hassanmeer941@gmail.com'
 EMAIL_HOST_PASSWORD = 'tghc jvmu fqhr vpyr'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = BASE_DIR / 'media'
 
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://redis-server:6379/0'
