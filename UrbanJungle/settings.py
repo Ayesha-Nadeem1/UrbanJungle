@@ -257,3 +257,32 @@ CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_ANCESTORS = ["'self'"]
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'mqtt_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/django/mqtt.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'loggers': {
+        'mqtt': {
+            'handlers': ['mqtt_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

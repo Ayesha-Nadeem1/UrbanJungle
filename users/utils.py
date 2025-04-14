@@ -97,3 +97,26 @@ def parse_and_save_device_data(data_string):
     except Exception as e:
         print(f"Error parsing device data: {e}")
         return None
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import time
+
+def safe_group_send(group_name, message):
+    """Safe wrapper for group_send that handles timedelta expiry issues"""
+    channel_layer = get_channel_layer()
+    
+    # Store the original expiry value
+    original_expiry = getattr(channel_layer, 'expiry', None)
+    
+    try:
+        # If expiry is a timedelta, convert it to seconds
+        if hasattr(original_expiry, 'total_seconds'):
+            channel_layer.expiry = int(original_expiry.total_seconds())
+        
+        # Send the message
+        async_to_sync(channel_layer.group_send)(group_name, message)
+    finally:
+        # Restore the original expiry value
+        if original_expiry is not None:
+            channel_layer.expiry = original_expiry

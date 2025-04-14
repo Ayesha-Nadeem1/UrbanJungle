@@ -1,13 +1,19 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework_simplejwt.tokens import UntypedToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken, AuthenticationFailed
 from django.contrib.auth import get_user_model
 from asgiref.sync import sync_to_async
 from jwt import decode
 from jwt.exceptions import ExpiredSignatureError
 from jwt.exceptions import InvalidTokenError
 from django.conf import settings
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
+from models import Device
+
 
 def get_user_model_instance():
     return get_user_model()
@@ -128,3 +134,81 @@ class DeviceNotificationConsumer(BaseAuthenticatedConsumer):
         """Send a WebSocket notification when a new device is added."""
         await self.send(text_data=json.dumps(event["data"]))
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.contrib.auth.models import AnonymousUser
+from .models import Device
+import logging
+
+logger = logging.getLogger(__name__)
+
+class DeviceDataConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        try:
+            self.device_din = self.scope['url_route']['kwargs'].get('din')
+            await self.authenticate()
+            
+            if not self.user or self.user.is_anonymous:
+                await self.close(code=4001)  # Unauthorized
+                return
+
+            if self.device_din and not await self.verify_device_ownership():
+                await self.close(code=4003)  # Forbidden
+                return
+
+            self.group_name = f"device_{self.device_din}" if self.device_din else "all_devices"
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+            await self.accept()
+            logger.info(f"Client connected to {self.group_name}")
+
+        except Exception as e:
+            logger.error(f"Connection error: {str(e)}")
+            await self.close(code=4000)
+
+    async def disconnect(self, close_code):
+        if hasattr(self, 'group_name'):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        logger.info(f"Client disconnected (code: {close_code})")
+
+    async def send_device_data(self, event):
+        """Handle device data broadcasts"""
+        try:
+            await self.send(text_data=json.dumps({
+                "data": event["data"],
+                "message": event["message"]
+            }))
+            logger.debug("Data sent successfully")
+        except Exception as e:
+            logger.error(f"Send error: {str(e)}")
+            await self.close()
+
+    @database_sync_to_async
+    def authenticate(self):
+        try:
+            headers = dict(self.scope['headers'])
+            auth_header = headers.get(b'authorization', b'').decode('utf-8')
+            
+            if not auth_header.startswith('Bearer '):
+                raise ValueError("No Bearer token provided")
+            
+            token = auth_header.split(' ')[1].strip()
+            auth = JWTAuthentication()
+            validated_token = auth.get_validated_token(token)
+            self.user = auth.get_user(validated_token)
+        except Exception as e:
+            logger.error(f"Authentication failed: {str(e)}")
+            self.user = AnonymousUser()
+            raise
+
+    @database_sync_to_async
+    def verify_device_ownership(self):
+        try:
+            device = Device.objects.get(din=self.device_din)
+            return device.owner == self.user
+        except Device.DoesNotExist:
+            return False

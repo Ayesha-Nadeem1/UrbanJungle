@@ -66,3 +66,4 @@ whitenoise==6.8.2
 zope.interface==7.2
 django-csp==3.8
 django-extensions==3.2.3
+paho-mqtt==1.6.1
