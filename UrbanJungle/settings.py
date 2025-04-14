@@ -264,7 +264,7 @@ LOGGING = {
         'mqtt_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/mqtt.log'),
+            'filename': '/var/log/django/mqtt.log',
             'formatter': 'verbose',
         },
         'console': {
