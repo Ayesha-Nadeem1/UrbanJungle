@@ -257,6 +257,43 @@ CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_ANCESTORS = ["'self'"]
 
 
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'mqtt_file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': '/var/log/django/mqtt.log',
+#             'formatter': 'verbose',
+#         },
+#         'console': {
+#             'level': 'INFO',
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'formatters': {
+#         'verbose': {
+#             'format': '{asctime} {levelname} {name} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'loggers': {
+#         'mqtt': {
+#             'handlers': ['mqtt_file', 'console'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#     },
+# }
+
+import os
+from pathlib import Path
+
+# Create base directory for logs if it doesn't exist
+LOG_DIR = Path('/var/log/django/')
+LOG_DIR.mkdir(exist_ok=True, mode=0o755)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -264,12 +301,17 @@ LOGGING = {
         'mqtt_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/var/log/django/mqtt.log',
+            'filename': str(LOG_DIR / 'mqtt.log'),  # Use pathlib for cross-platform compatibility
             'formatter': 'verbose',
+            'mode': 'a',  # Explicitly set append mode
         },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'null': {  # Add a null handler as fallback
+            'class': 'logging.NullHandler',
         },
     },
     'formatters': {
@@ -284,5 +326,14 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
+        # Add fallback configuration for other loggers
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+    'root': {  # Root logger configuration as safety net
+        'handlers': ['console'],
+        'level': 'WARNING',
     },
 }
