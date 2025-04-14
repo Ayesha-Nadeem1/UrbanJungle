@@ -298,42 +298,12 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'mqtt_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': str(LOG_DIR / 'mqtt.log'),  # Use pathlib for cross-platform compatibility
-            'formatter': 'verbose',
-            'mode': 'a',  # Explicitly set append mode
-        },
         'console': {
-            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'null': {  # Add a null handler as fallback
-            'class': 'logging.NullHandler',
         },
     },
-    'formatters': {
-        'verbose': {
-            'format': '{asctime} {levelname} {name} {message}',
-            'style': '{',
-        },
-    },
-    'loggers': {
-        'mqtt': {
-            'handlers': ['mqtt_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        # Add fallback configuration for other loggers
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        },
-    },
-    'root': {  # Root logger configuration as safety net
+    'root': {
         'handlers': ['console'],
-        'level': 'WARNING',
+        'level': 'INFO',
     },
 }
