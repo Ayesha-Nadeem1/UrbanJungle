@@ -290,20 +290,40 @@ CSP_FRAME_ANCESTORS = ["'self'"]
 import os
 from pathlib import Path
 
-# Create base directory for logs if it doesn't exist
-LOG_DIR = Path('/var/log/django/')
-LOG_DIR.mkdir(exist_ok=True, mode=0o755)
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+LOG_DIR = BASE_DIR / 'logs' / 'mqtt'
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
         },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
+    'handlers': {
+        'mqtt_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': str(LOG_DIR / 'mqtt.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'mqtt': {
+            'handlers': ['console'],  # Temporarily remove 'mqtt_file'
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     },
 }
