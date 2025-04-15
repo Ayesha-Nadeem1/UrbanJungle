@@ -12,7 +12,7 @@ from django.conf import settings
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
-from models import Device
+from .models import Device
 
 
 def get_user_model_instance():
