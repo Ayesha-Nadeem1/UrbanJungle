@@ -6,12 +6,12 @@ import django
 import paho.mqtt.client as paho
 from paho import mqtt
 from datetime import datetime
-import logging
+# import logging
 from django.utils.timezone import now
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('mqtt')
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger('mqtt')
 
 def initialize_and_start_mqtt():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')
@@ -38,17 +38,18 @@ def initialize_and_start_mqtt():
                     "message": "New device data received"
                 }
             )
-            logger.debug(f"Broadcasted to device {device_din}")
+            # logger.debug(f"Broadcasted to device {device_din}")
         except Exception as e:
-            logger.error(f"Broadcast error: {str(e)}")
+            # logger.error(f"Broadcast error: {str(e)}")
+            pass
 
     def on_message(client, userdata, msg):
         try:
             payload = msg.payload.decode('utf-8')
-            logger.info(f"Received: {payload}")
+            # logger.info(f"Received: {payload}")
             
             if not payload or '$' not in payload:
-                logger.warning("Invalid message format")
+                # logger.warning("Invalid message format")
                 return
 
             # Parse and save data
@@ -66,14 +67,15 @@ def initialize_and_start_mqtt():
                 broadcast_data(audit_log.device.din, data)
 
         except Exception as e:
-            logger.error(f"Message handling error: {str(e)}")
+            # logger.error(f"Message handling error: {str(e)}")
+            pass
 
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            logger.info("Connected to broker")
+            # logger.info("Connected to broker")
             client.subscribe("devices/#", qos=1)
         else:
-            logger.error(f"Connection failed with code: {rc}")
+            # logger.error(f"Connection failed with code: {rc}")
             if rc not in [4, 5]:  # Don't retry auth failures
                 time.sleep(5)
                 client.reconnect()
@@ -87,12 +89,13 @@ def initialize_and_start_mqtt():
             client.on_connect = on_connect
             client.on_message = on_message
             
-            logger.info(f"Connecting as {client_id}...")
+            # logger.info(f"Connecting as {client_id}...")
             client.connect("5acf219d28014115bfe92ebe6f2afa31.s1.eu.hivemq.cloud", 8883, keepalive=60)
             client.loop_forever()
             
         except Exception as e:
-            logger.error(f"Client error: {str(e)}")
+            # logger.error(f"Client error: {str(e)}")
+            pass
 
     # Start in a new thread if not already running
     if not hasattr(initialize_and_start_mqtt, '_mqtt_thread'):

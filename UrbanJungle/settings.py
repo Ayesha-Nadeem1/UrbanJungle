@@ -297,33 +297,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / 'logs' / 'mqtt'
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{asctime} {levelname} {name} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'mqtt_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': str(LOG_DIR / 'mqtt.log'),
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
-    'loggers': {
-        'mqtt': {
-            'handlers': ['console'],  # Temporarily remove 'mqtt_file'
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '{asctime} {levelname} {name} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'handlers': {
+#         'mqtt_file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': str(LOG_DIR / 'mqtt.log'),
+#             'formatter': 'verbose',
+#         },
+#         'console': {
+#             'level': 'INFO',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'verbose',
+#         },
+#     },
+#     'loggers': {
+#         'mqtt': {
+#             'handlers': ['console'],  # Temporarily remove 'mqtt_file'
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#     },
+# }
