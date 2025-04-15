@@ -1,4 +1,11 @@
-import os,django
+import os
+import django
+
+# Set up Django FIRST before any other imports
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "UrbanJungle.settings")
+django.setup()
+
+# Now import the rest
 import jwt
 from django.conf import settings
 from django.core.asgi import get_asgi_application
@@ -6,17 +13,17 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from channels.middleware import BaseMiddleware
 
-from users.routing import websocket_urlpatterns
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from asgiref.sync import sync_to_async
 
+# Import routing AFTER Django is set up
+from users.routing import websocket_urlpatterns
+
 User = get_user_model()
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "UrbanJungle.settings")
-django.setup()
 
 class JWTAuthMiddleware(BaseMiddleware):
     """
