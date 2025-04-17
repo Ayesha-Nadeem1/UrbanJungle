@@ -257,10 +257,3 @@ def initialize_and_start_mqtt():
         logger.error(f"Initialization failed: {str(e)}", exc_info=True)
         raise
 
-if __name__ == "__main__":
-    logging.info("Starting MQTT client")
-    initialize_and_start_mqtt()
-    
-    # Keep main thread alive
-    while True:
-        time.sleep(10)
