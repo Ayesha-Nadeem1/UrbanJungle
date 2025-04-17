@@ -3,11 +3,10 @@ from paho import mqtt
 import time
 from datetime import datetime
 import random
-# import logging
+import logging
 
-# Configure logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Configuration
 BROKER = "5acf219d28014115bfe92ebe6f2afa31.s1.eu.hivemq.cloud"
@@ -41,11 +40,11 @@ def main():
         while True:
             data = generate_device_data(device_din)
             client.publish(TOPIC, data, qos=1)
-            # logger.info(f"Published: {data}")
+            logger.info(f"Published: {data}")
             time.sleep(60)  # Send every minute
             
     except KeyboardInterrupt:
-        # logger.info("Stopping publisher...")
+        logger.info("Stopping publisher...")
         pass
     finally:
         client.disconnect()
