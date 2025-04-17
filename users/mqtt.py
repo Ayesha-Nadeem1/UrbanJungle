@@ -14,11 +14,11 @@ from django.utils.timezone import now
 # logger = logging.getLogger('mqtt')
 
 def initialize_and_start_mqtt():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Dashboard.settings')
     django.setup()
     
     from .models import Device, DeviceAuditLog
-    from .utils import parse_and_save_device_data, safe_group_send
+    from .utils import parse_and_save_device_data, safe_group_send,check_abnormalities,send_notification
 
     # Generate unique client ID
     client_id = f"device_subscriber_{int(time.time())}_{os.getpid()}"
@@ -43,32 +43,64 @@ def initialize_and_start_mqtt():
             # logger.error(f"Broadcast error: {str(e)}")
             pass
 
+    # def on_message(client, userdata, msg):
+    #     try:
+    #         payload = msg.payload.decode('utf-8')
+    #         # logger.info(f"Received: {payload}")
+            
+    #         if not payload or '$' not in payload:
+    #             # logger.warning("Invalid message format")
+    #             return
+
+    #         # Parse and save data
+    #         audit_log = parse_and_save_device_data(payload)
+    #         if audit_log:
+    #             # Prepare data for WebSocket
+    #             data = {
+    #                 'temperature': audit_log.temperature,
+    #                 'humidity': audit_log.humidity,
+    #                 'tds': audit_log.tds,
+    #                 'water_temperature': audit_log.water_temperature,
+    #                 'error_codes': audit_log.error_codes,
+    #                 'timestamp': audit_log.timestamp
+    #             }
+    #             broadcast_data(audit_log.device.din, data)
+
+    #     except Exception as e:
+    #         # logger.error(f"Message handling error: {str(e)}")
+    #         pass
+    # In your mqtt.py on_message handler
     def on_message(client, userdata, msg):
         try:
             payload = msg.payload.decode('utf-8')
-            # logger.info(f"Received: {payload}")
             
             if not payload or '$' not in payload:
-                # logger.warning("Invalid message format")
                 return
 
             # Parse and save data
             audit_log = parse_and_save_device_data(payload)
-            if audit_log:
-                # Prepare data for WebSocket
+            if audit_log and audit_log.device:
+                # Prepare data
                 data = {
                     'temperature': audit_log.temperature,
                     'humidity': audit_log.humidity,
                     'tds': audit_log.tds,
                     'water_temperature': audit_log.water_temperature,
-                    'error_codes': audit_log.error_codes,
                     'timestamp': audit_log.timestamp
                 }
+                
+                # Check for abnormalities
+                warnings = check_abnormalities(data)
+                if warnings:
+                    message = "\n".join(warnings)
+                    send_notification(audit_log.device.din, message)
+                    data['warnings'] = warnings
+                
                 broadcast_data(audit_log.device.din, data)
 
         except Exception as e:
-            # logger.error(f"Message handling error: {str(e)}")
-            pass
+            print(f"Message handling error: {str(e)}")
+
 
     def on_connect(client, userdata, flags, rc):
         if rc == 0:

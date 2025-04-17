@@ -1,25 +1,58 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-def send_notification(user, message):
+# def send_notification(user, message):
+#     """
+#     Sends a WebSocket notification to the user using Django Channels.
+    
+#     Args:
+#         user: The user to whom the notification should be sent.
+#         message: The notification message content.
+#     """
+#     channel_layer = get_channel_layer()
+#     group_name = f"user_{user.id}"  # Assuming you have a WebSocket group per user.
+
+#     # Send the message to the WebSocket group
+#     async_to_sync(channel_layer.group_send)(
+#         group_name,
+#         {
+#             "type": "notification.message",
+#             "message": message,
+#         },
+#     )
+
+# notifications.py
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import logging
+from django.utils.timezone import now
+
+logger = logging.getLogger(__name__)
+
+def send_notification(device_din, message):
     """
-    Sends a WebSocket notification to the user using Django Channels.
+    Send notification to specific device's alert channel
     
     Args:
-        user: The user to whom the notification should be sent.
-        message: The notification message content.
+        device_din: Device DIN to send alert to
+        message: Notification message
     """
-    channel_layer = get_channel_layer()
-    group_name = f"user_{user.id}"  # Assuming you have a WebSocket group per user.
-
-    # Send the message to the WebSocket group
-    async_to_sync(channel_layer.group_send)(
-        group_name,
-        {
-            "type": "notification.message",
-            "message": message,
-        },
-    )
+    try:
+        channel_layer = get_channel_layer()
+        
+        async_to_sync(channel_layer.group_send)(
+            f"alerts_{device_din}",
+            {
+                "type": "send_alert",
+                "message": message,
+                "timestamp": now().isoformat()
+            }
+        )
+        
+        logger.info(f"Alert sent to device {device_din}: {message}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send alert: {str(e)}")
 
 
 from datetime import timedelta,datetime, timezone
@@ -120,3 +153,74 @@ def safe_group_send(group_name, message):
         # Restore the original expiry value
         if original_expiry is not None:
             channel_layer.expiry = original_expiry
+
+
+# utils.py
+from django.core.exceptions import ObjectDoesNotExist
+from .models import Crop
+
+def check_abnormalities(sensor_data):
+    """
+    Check for abnormalities in sensor readings using global crop thresholds.
+    
+    Args:
+        sensor_data: Dictionary containing sensor readings with keys:
+            - temperature (float)
+            - humidity (float)
+            - tds (str/float)
+            - water_temperature (str/float)
+            
+    Returns:
+        list: List of warning messages if abnormalities found, empty list otherwise
+    """
+    warnings = []
+    
+    try:
+        # Get global crop thresholds (first crop in DB)
+        crop = Crop.objects.first()
+        if not crop:
+            return warnings  # No crop data available
+
+        # Check temperature
+        if 'temperature' in sensor_data and sensor_data['temperature'] is not None:
+            temp = sensor_data['temperature']
+            if temp < crop.min_optimal_temperature:
+                warnings.append(f"Low Temperature Alert: {temp}°C (Min: {crop.min_optimal_temperature}°C)")
+            elif temp > crop.max_optimal_temperature:
+                warnings.append(f"High Temperature Alert: {temp}°C (Max: {crop.max_optimal_temperature}°C)")
+
+        # Check humidity
+        if 'humidity' in sensor_data and sensor_data['humidity'] is not None:
+            humidity = sensor_data['humidity']
+            if humidity < crop.min_optimal_humidity:
+                warnings.append(f"Low Humidity Alert: {humidity}% (Min: {crop.min_optimal_humidity}%)")
+            elif humidity > crop.max_optimal_humidity:
+                warnings.append(f"High Humidity Alert: {humidity}% (Max: {crop.max_optimal_humidity}%)")
+
+        # Check TDS
+        if 'tds' in sensor_data and sensor_data['tds'] is not None:
+            try:
+                tds = float(sensor_data['tds'])
+                if tds < float(crop.min_optimal_tds):
+                    warnings.append(f"Low TDS Alert: {tds} (Min: {crop.min_optimal_tds})")
+                elif tds > float(crop.max_optimal_tds):
+                    warnings.append(f"High TDS Alert: {tds} (Max: {crop.max_optimal_tds})")
+            except (ValueError, TypeError):
+                pass
+
+        # Check Water Temperature
+        if 'water_temperature' in sensor_data and sensor_data['water_temperature'] is not None:
+            try:
+                water_temp = float(sensor_data['water_temperature'])
+                if water_temp < float(crop.min_optimal_water_temperature):
+                    warnings.append(f"Low Water Temperature Alert: {water_temp}°C (Min: {crop.min_optimal_water_temperature}°C)")
+                elif water_temp > float(crop.max_optimal_water_temperature):
+                    warnings.append(f"High Water Temperature Alert: {water_temp}°C (Max: {crop.max_optimal_water_temperature}°C)")
+            except (ValueError, TypeError):
+                pass
+
+    except Exception as e:
+        print(f"Error checking abnormalities: {e}")
+    
+    return warnings
+
