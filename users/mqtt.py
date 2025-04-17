@@ -149,11 +149,12 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/var/log/django/mqtt.log'),
+        logging.FileHandler('/var/log/django/mqtt_debug.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger('mqtt')
+logger.setLevel(logging.DEBUG) 
 
 def initialize_and_start_mqtt():
     try:
@@ -167,6 +168,7 @@ def initialize_and_start_mqtt():
 
         def broadcast_data(device_din, data):
             try:
+                logger.debug(f"Attempting to broadcast to {device_din}: {data}")
                 if 'timestamp' in data:
                     data['timestamp'] = data['timestamp'].isoformat()
                     
@@ -184,8 +186,10 @@ def initialize_and_start_mqtt():
 
         def on_message(client, userdata, msg):
             try:
+                logger.debug(f"Raw message received: {msg.payload.decode()}")
                 payload = msg.payload.decode('utf-8')
                 if not payload or '$' not in payload:
+                    logger.debug("Invalid message format - skipping")
                     return
 
                 audit_log = parse_and_save_device_data(payload)
