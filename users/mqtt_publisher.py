@@ -23,7 +23,7 @@ def generate_device_data(device_din):
         f"{round(random.uniform(40.0, 80.0), 1)}$"  # humidity
         f"{random.randint(100, 1000)}$"            # tds
         f"{round(random.uniform(15.0, 25.0), 1)}$" # water temp
-        f"{'E00_' if random.random() < 0.9 else f'E{random.randint(1,5):02d}$_'}"  # error code
+        f"{'E00_' if random.random() < 0.9 else f'E{random.randint(1,5):02d}_'}"  # error code
     )
 
 def main():
