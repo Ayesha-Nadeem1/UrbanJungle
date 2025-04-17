@@ -79,7 +79,7 @@ def check_abnormalities(sender, instance, **kwargs):
         if warnings:
             message = "\n".join(warnings)
             # Assuming each device belongs to a user
-            user = instance.device.user if instance.device else None
+            user = instance.device.owner if instance.device else None
             if user:
                 send_notification(user, message)
 
