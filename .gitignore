@@ -1,0 +1,25 @@
+# Django-specific ignores
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
+
+# Virtual environment
+../venv/
+
+# Ignore sensitive data
+.config
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db

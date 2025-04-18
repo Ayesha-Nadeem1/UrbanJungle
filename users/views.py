@@ -997,3 +997,54 @@ class AddressUpdateDeleteView(APIView):
 
         address.delete()
         return Response({"message": "Address deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from .models import Blog
+from .serializers import BlogSerializer
+from .permissions import IsAuthorOrReadOnly
+from django.shortcuts import get_object_or_404
+
+class BlogListCreateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        blogs = Blog.objects.all().order_by('-date_published')
+        serializer = BlogSerializer(blogs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = BlogSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BlogDetailAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAuthorOrReadOnly]
+
+    def get_object(self, pk):
+        blog = get_object_or_404(Blog, pk=pk)
+        self.check_object_permissions(self.request, blog)
+        return blog
+
+    def get(self, request, pk):
+        blog = self.get_object(pk)
+        serializer = BlogSerializer(blog)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        blog = self.get_object(pk)
+        serializer = BlogSerializer(blog, data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=request.user)  # Ensure author stays same
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        blog = self.get_object(pk)
+        blog.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

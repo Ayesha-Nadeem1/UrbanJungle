@@ -183,3 +183,12 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = '__all__'
         read_only_fields = ['user']  
+
+from .models import Blog
+
+class BlogSerializer(serializers.ModelSerializer):
+    author = serializers.ReadOnlyField(source='author.username')
+
+    class Meta:
+        model = Blog
+        fields = '__all__'

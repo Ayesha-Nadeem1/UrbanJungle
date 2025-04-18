@@ -25,7 +25,8 @@ from .views import (
     ProductListCreateView, ProductRetrieveUpdateDeleteView,
     CartListCreateView, CartItemListCreateView, CartItemRetrieveUpdateDeleteView,
     OrderListCreateView, OrderRetrieveUpdateDeleteView,
-    OrderItemListView, OrderItemRetrieveUpdateDeleteView, AddressListCreateView, AddressUpdateDeleteView
+    OrderItemListView, OrderItemRetrieveUpdateDeleteView, AddressListCreateView, AddressUpdateDeleteView,
+    BlogListCreateAPIView,BlogDetailAPIView
     )
 
 urlpatterns = [
@@ -90,5 +91,9 @@ urlpatterns = [
     #address urls
     path('addresses/', AddressListCreateView.as_view(), name='address-list-create'),
     path('addresses/<int:address_id>/', AddressUpdateDeleteView.as_view(), name='address-update-delete'),
+
+    #blogs
+    path('blogs/', BlogListCreateAPIView.as_view(), name='blog-list-create'),
+    path('blogs/<int:pk>/', BlogDetailAPIView.as_view(), name='blog-detail'),
 ]
 
