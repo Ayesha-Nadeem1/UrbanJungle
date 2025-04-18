@@ -58,7 +58,7 @@ def initialize_and_start_mqtt():
                 logger.info(f"📨 Received MQTT message: {payload}")
 
                 if not payload or '$' not in payload:
-                    logger.error("🚫 Invalid message format")
+                    logger.info("🚫 Invalid message format")
                     return
 
                 audit_log = parse_and_save_device_data(payload)
@@ -80,7 +80,7 @@ def initialize_and_start_mqtt():
                     broadcast_data(audit_log.device.din, data)
 
             except Exception as e:
-                logger.error(f"🚫 Error processing message: {e}", exc_info=True)
+                logger.info(f"🚫 Error processing message: {e}", exc_info=True)
 
         def on_connect(client, userdata, flags, rc):
             if rc == 0:
