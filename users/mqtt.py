@@ -5,6 +5,7 @@ from threading import Thread
 import django
 import paho.mqtt.client as paho
 from paho import mqtt
+import threading 
 
 # Logging configuration
 # logging.basicConfig(level=logging.INFO)
@@ -28,12 +29,17 @@ def initialize_and_start_mqtt():
         from .models import Device, DeviceAuditLog
         from .utils import parse_and_save_device_data, safe_group_send, check_abnormalities, send_alert
         logger = logging.getLogger('mqtt')
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
 
         client_id = f"device_subscriber_{int(time.time())}_{os.getpid()}"
+        thread_event = threading.Event()
 
         def broadcast_data(device_din, data):
             try:
+                if not django.apps.apps.ready:
+                    logger.warning("Django apps not ready, skipping broadcast")
+                    return
+                    
                 logger.debug(f"Broadcasting to {device_din}: {data}")
                 if 'timestamp' in data:
                     data['timestamp'] = data['timestamp'].isoformat()
@@ -104,10 +110,12 @@ def initialize_and_start_mqtt():
                 time.sleep(5)
                 client.reconnect()
 
+
         def start_client():
             #while True:
             try:
                 client = paho.Client(client_id=client_id, clean_session=True)
+                client.thread_event = thread_event
                 client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS,cert_reqs=mqtt.client.ssl.CERT_REQUIRED)
                 client.tls_insecure_set(True)  # Disable strict certificate checks (for dev)
                 client.username_pw_set("admin", "ATmega32u")
@@ -119,7 +127,17 @@ def initialize_and_start_mqtt():
 
                 logger.info(f"🔌 Connecting as {client_id}...")
                 client.connect("5acf219d28014115bfe92ebe6f2afa31.s1.eu.hivemq.cloud", 8883, keepalive=60)
-                client.loop_forever()
+                #client.loop_forever()
+                client.loop_start()
+
+                while not thread_event.is_set():
+                    time.sleep(1)
+                    
+                # Proper shutdown sequence
+                logger.info("MQTT shutdown initiated, stopping client...")
+                client.loop_stop()
+                client.disconnect()
+                logger.info("MQTT client disconnected cleanly")
 
             except Exception as e:
                 logger.error(f"🚫 Client loop error: {e}", exc_info=True)
