@@ -34,7 +34,7 @@ def initialize_and_start_mqtt():
 
         def broadcast_data(device_din, data):
             try:
-                logger.info(f"Broadcasting to {device_din}: {data}")
+                logger.debug(f"Broadcasting to {device_din}: {data}")
                 if 'timestamp' in data:
                     data['timestamp'] = data['timestamp'].isoformat()
 
@@ -46,7 +46,7 @@ def initialize_and_start_mqtt():
                         "message": "New device data received"
                     }
                 )
-                logger.info(f"✅ Broadcasted data to device {device_din}")
+                logger.debug(f"✅ Broadcasted data to device {device_din}")
             except Exception as e:
                 logger.error(f"🚫 Broadcast error: {e}", exc_info=True)
                 import traceback
@@ -58,7 +58,7 @@ def initialize_and_start_mqtt():
                 logger.info(f"📨 Received MQTT message: {payload}")
 
                 if not payload or '$' not in payload:
-                    logger.info("🚫 Invalid message format")
+                    logger.warning("🚫 Invalid message format")
                     return
 
                 audit_log = parse_and_save_device_data(payload)
@@ -80,7 +80,7 @@ def initialize_and_start_mqtt():
                     broadcast_data(audit_log.device.din, data)
 
             except Exception as e:
-                logger.info(f"🚫 Error processing message: {e}", exc_info=True)
+                logger.error(f"🚫 Error processing message: {e}", exc_info=True)
 
         def on_connect(client, userdata, flags, rc):
             if rc == 0:
