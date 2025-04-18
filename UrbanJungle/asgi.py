@@ -63,7 +63,7 @@ class JWTAuthMiddleware(BaseMiddleware):
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
-        "websocket": JWTAuthMiddleware(
+        "websocket": AuthMiddlewareStack(
             AuthMiddlewareStack(
                 URLRouter(websocket_urlpatterns)
             )
