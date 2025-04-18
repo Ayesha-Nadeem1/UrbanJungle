@@ -7,10 +7,18 @@ import paho.mqtt.client as paho
 from paho import mqtt
 
 # Logging configuration
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
+
+
+logging.basicConfig(
+     level=logging.INFO,
+     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+     handlers=[
+         logging.FileHandler('/var/log/django/mqtt_debug.log'),
+         logging.StreamHandler()
+     ]
+ )
 logger = logging.getLogger(__name__)
-
-
 
 def initialize_and_start_mqtt():
     try:
