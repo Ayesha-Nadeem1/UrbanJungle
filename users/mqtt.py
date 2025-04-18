@@ -58,7 +58,7 @@ def initialize_and_start_mqtt():
                 logger.info(f"📨 Received MQTT message: {payload}")
 
                 if not payload or '$' not in payload:
-                    logger.warning("🚫 Invalid message format")
+                    logger.error("🚫 Invalid message format")
                     return
 
                 audit_log = parse_and_save_device_data(payload)
