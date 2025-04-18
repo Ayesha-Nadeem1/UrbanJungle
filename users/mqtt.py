@@ -20,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 
 def initialize_and_start_mqtt():
     try:
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Dashboard.settings')
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'UrbanJungle.settings')
         django.setup()
 
         from .models import Device, DeviceAuditLog
@@ -110,7 +110,7 @@ def initialize_and_start_mqtt():
         if not hasattr(initialize_and_start_mqtt, '_mqtt_thread'):
             initialize_and_start_mqtt._mqtt_thread = Thread(
                 target=start_client,
-                daemon=False
+                daemon=True
             )
             initialize_and_start_mqtt._mqtt_thread.start()
             logger.info("✅ MQTT thread started")
