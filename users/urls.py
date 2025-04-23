@@ -26,7 +26,8 @@ from .views import (
     CartListCreateView, CartItemListCreateView, CartItemRetrieveUpdateDeleteView,
     OrderListCreateView, OrderRetrieveUpdateDeleteView,
     OrderItemListView, OrderItemRetrieveUpdateDeleteView, AddressListCreateView, AddressUpdateDeleteView,
-    BlogListCreateAPIView,BlogDetailAPIView
+    BlogListCreateAPIView,BlogDetailAPIView,
+    LightScheduleListCreateAPIView, LightScheduleRetrieveUpdateDestroyAPIView
     )
 
 urlpatterns = [
@@ -95,5 +96,9 @@ urlpatterns = [
     #blogs
     path('blogs/', BlogListCreateAPIView.as_view(), name='blog-list-create'),
     path('blogs/<int:pk>/', BlogDetailAPIView.as_view(), name='blog-detail'),
+
+    #light schedules
+    path('light-schedules/', LightScheduleListCreateAPIView.as_view(), name='light-schedule-list-create'),
+    path('light-schedules/<int:pk>/', LightScheduleRetrieveUpdateDestroyAPIView.as_view(), name='light-schedule-retrieve-update-destroy'),
 ]
 

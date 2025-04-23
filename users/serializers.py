@@ -192,3 +192,40 @@ class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = Blog
         fields = '__all__'
+
+from .models import LightSchedule, Device, Crop
+
+class LightScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LightSchedule
+        fields = '__all__'
+        read_only_fields = ('device',)
+
+    def validate(self, data):
+        handled_by_user = data.get('handled_by_user', False)
+        
+        if handled_by_user:
+            if not data.get('schedule_for_week'):
+                raise serializers.ValidationError("Weekly schedule is required for manual scheduling")
+            if data.get('light_on_time') or data.get('light_on_duration'):
+                raise serializers.ValidationError("light_on_time and light_on_duration must be null for manual scheduling")
+        else:
+            if data.get('schedule_for_week'):
+                raise serializers.ValidationError("Weekly schedule must be null for automatic scheduling")
+            if not data.get('light_on_time'):
+                raise serializers.ValidationError("light_on_time is required for automatic scheduling")
+            
+            if not data.get('light_on_duration'):
+                first_crop = Crop.objects.first()
+                if first_crop and first_crop.required_light_duration:
+                    data['light_on_duration'] = first_crop.required_light_duration
+                else:
+                    raise serializers.ValidationError("No crop with light duration found")
+        
+        return data
+
+    def validate_device(self, value):
+        # Check if the requesting user owns the device
+        if self.context['request'].user != value.owner:
+            raise serializers.ValidationError("You don't own this device")
+        return value
