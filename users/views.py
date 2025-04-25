@@ -1174,71 +1174,96 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk, user):
-        schedule = get_object_or_404(LightSchedule, pk=pk)
-        if schedule.device.owner != user:
-            raise PermissionDenied("You don't own this device")
-        return schedule
+        try:
+            schedule = LightSchedule.objects.get(pk=pk)
+            if schedule.device.owner != user:
+                raise PermissionDenied("You don't own this device")
+            return schedule
+        except LightSchedule.DoesNotExist:
+            raise Http404(f"No LightSchedule found with id {pk}")
 
     def get(self, request, pk):
-        schedule = self.get_object(pk, request.user)
-        serializer = LightScheduleSerializer(schedule, context={'request': request})
-        return Response(serializer.data)
+        try:
+            schedule = self.get_object(pk, request.user)
+            serializer = LightScheduleSerializer(schedule, context={'request': request})
+            return Response(serializer.data)
+        except Http404 as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     def put(self, request, pk):
-        schedule = self.get_object(pk, request.user)
-        serializer = LightScheduleSerializer(
-            schedule, 
-            data=request.data, 
-            context={'request': request}
-        )
-        
-        if serializer.is_valid():
-            # Prevent changing the device reference
-            if 'device' in request.data and request.data['device'] != schedule.device.id:
-                return Response(
-                    {"detail": "Cannot change device reference for an existing schedule"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        try:
+            schedule = self.get_object(pk, request.user)
+            serializer = LightScheduleSerializer(
+                schedule, 
+                data=request.data, 
+                context={'request': request}
+            )
             
-            # Handle automatic scheduling
-            if not serializer.validated_data.get('handled_by_user', False):
-                self._handle_automatic_scheduling(serializer)
+            if serializer.is_valid():
+                # Prevent changing the device reference
+                if 'device' in request.data and request.data['device'] != schedule.device.id:
+                    return Response(
+                        {"detail": "Cannot change device reference for an existing schedule"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Handle automatic scheduling
+                if not serializer.validated_data.get('handled_by_user', False):
+                    self._handle_automatic_scheduling(serializer)
+                
+                serializer.save()
+                return Response(serializer.data)
+                
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
-            serializer.save()
-            return Response(serializer.data)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Http404 as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     def patch(self, request, pk):
-        schedule = self.get_object(pk, request.user)
-        serializer = LightScheduleSerializer(
-            schedule, 
-            data=request.data, 
-            partial=True,
-            context={'request': request}
-        )
-        
-        if serializer.is_valid():
-            # Prevent changing the device reference
-            if 'device' in request.data and request.data['device'] != schedule.device.id:
-                return Response(
-                    {"detail": "Cannot change device reference for an existing schedule"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        try:
+            schedule = self.get_object(pk, request.user)
+            serializer = LightScheduleSerializer(
+                schedule, 
+                data=request.data, 
+                partial=True,
+                context={'request': request}
+            )
             
-            # Handle automatic scheduling
-            if not serializer.validated_data.get('handled_by_user', False):
-                self._handle_automatic_scheduling(serializer)
+            if serializer.is_valid():
+                # Prevent changing the device reference
+                if 'device' in request.data and request.data['device'] != schedule.device.id:
+                    return Response(
+                        {"detail": "Cannot change device reference for an existing schedule"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Handle automatic scheduling
+                if not serializer.validated_data.get('handled_by_user', False):
+                    self._handle_automatic_scheduling(serializer)
+                
+                serializer.save()
+                return Response(serializer.data)
+                
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
-            serializer.save()
-            return Response(serializer.data)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Http404 as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, pk):
-        schedule = self.get_object(pk, request.user)
-        schedule.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            schedule = self.get_object(pk, request.user)
+            schedule.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Http404 as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except PermissionDenied as e:
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     def _handle_automatic_scheduling(self, serializer):
         """Helper method to handle automatic scheduling logic"""
