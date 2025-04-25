@@ -1102,9 +1102,9 @@ class LightScheduleListCreateAPIView(APIView):
             try:
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            except IntegrityError:
+            except IntegrityError as e:
                 return Response(
-                    {"detail": "This device already has a light schedule"},
+                    {"error":{"detail": str(e)}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
                 
