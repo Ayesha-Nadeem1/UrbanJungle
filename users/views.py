@@ -1195,7 +1195,8 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
 
     def put(self, request, pk):
         try:
-            schedule = self.get(pk, request)
+            #schedule = self.get_object(pk, request.user)
+            schedule = self.get(request, pk)
             serializer = LightScheduleSerializer(
                 schedule, 
                 data=request.data, 
