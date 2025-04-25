@@ -196,10 +196,11 @@ class BlogSerializer(serializers.ModelSerializer):
 from .models import LightSchedule, Device, Crop
 
 class LightScheduleSerializer(serializers.ModelSerializer):
+    device = serializers.PrimaryKeyRelatedField(queryset=Device.objects.all())
     class Meta:
         model = LightSchedule
         fields = '__all__'
-        read_only_fields = ('device',)
+        #read_only_fields = ('device',)
 
     def validate(self, data):
         handled_by_user = data.get('handled_by_user', False)

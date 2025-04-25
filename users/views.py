@@ -1075,39 +1075,83 @@ class LightScheduleListCreateAPIView(APIView):
         serializer = LightScheduleSerializer(schedules, many=True, context={'request': request})
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = LightScheduleSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            device_id = request.data.get('device')
-            device = get_object_or_404(Device, pk=device_id)
+    # def post(self, request):
+    #     serializer = LightScheduleSerializer(data=request.data, context={'request': request})
+    #     if serializer.is_valid():
+    #         device_id = request.data.get('device')
+    #         device = get_object_or_404(Device, pk=device_id)
             
-            # Check device ownership
-            if device.owner != request.user:
-                return Response(
-                    {"detail": "You don't own this device"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+    #         # Check device ownership
+    #         if device.owner != request.user:
+    #             return Response(
+    #                 {"detail": "You don't own this device"},
+    #                 status=status.HTTP_403_FORBIDDEN
+    #             )
             
-            # # Check if device already has a schedule
-            if LightSchedule.objects.filter(device=device).exists():
-                return Response(
-                    {"detail": "This device already has a light schedule"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+    #         # # Check if device already has a schedule
+    #         if LightSchedule.objects.filter(device=device).exists():
+    #             return Response(
+    #                 {"detail": "This device already has a light schedule"},
+    #                 status=status.HTTP_400_BAD_REQUEST
+    #             )
 
-            # Handle automatic scheduling
-            if not serializer.validated_data.get('handled_by_user', False):
-                self._handle_automatic_scheduling(serializer)
+    #         # Handle automatic scheduling
+    #         if not serializer.validated_data.get('handled_by_user', False):
+    #             self._handle_automatic_scheduling(serializer)
             
+    #         try:
+    #             serializer.save()
+    #             return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #         except IntegrityError as e:
+    #             return Response(
+    #                 {"error":{"detail": str(e)}},
+    #                 status=status.HTTP_400_BAD_REQUEST
+    #             )
+                
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        # Ensure device exists and user owns it first
+        device_id = request.data.get('device')
+        if not device_id:
+            return Response(
+                {"detail": "Device ID is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            device = Device.objects.get(pk=device_id)
+        except Device.DoesNotExist:
+            return Response(
+                {"detail": f"Device with ID {device_id} does not exist"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if device.owner != request.user:
+            return Response(
+                {"detail": "You don't own this device"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Now handle the schedule creation
+        serializer = LightScheduleSerializer(
+            data=request.data,
+            context={'request': request, 'device': device}  # Pass device in context
+        )
+        
+        if serializer.is_valid():
             try:
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                # Explicitly set the device before saving
+                instance = serializer.save(device=device)
+                return Response(
+                    LightScheduleSerializer(instance).data,
+                    status=status.HTTP_201_CREATED
+                )
             except IntegrityError as e:
                 return Response(
-                    {"error":{"detail": str(e)}},
+                    {"error": str(e)},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-                
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def _handle_automatic_scheduling(self, serializer):
