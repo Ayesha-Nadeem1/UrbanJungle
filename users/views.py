@@ -1071,7 +1071,7 @@ import logging
 from .models import LightSchedule, Device, Crop
 from .serializers import LightScheduleSerializer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('mqtt')
 
 # MQTT Client setup
 mqtt_client = mqtt.Client(client_id="django_light_schedule_publisher")
