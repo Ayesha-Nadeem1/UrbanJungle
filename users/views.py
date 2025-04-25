@@ -1053,20 +1053,32 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import LightSchedule, Device
 from .serializers import LightScheduleSerializer
 from django.shortcuts import get_object_or_404
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from .models import LightSchedule, Device, Crop
-from .serializers import LightScheduleSerializer
-from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from django.http import Http404
+
+from rest_framework.exceptions import PermissionDenied, NotFound
+
+from django.utils import timezone
+import paho.mqtt.client as mqtt
+from django.conf import settings
+import json
+import logging
+
+from .models import LightSchedule, Device, Crop
+from .serializers import LightScheduleSerializer
+
+logger = logging.getLogger(__name__)
+
+# MQTT Client setup
+mqtt_client = mqtt.Client(client_id="django_light_schedule_publisher")
+mqtt_client.username_pw_set(settings.MQTT_USER, settings.MQTT_PASSWORD)
+mqtt_client.tls_set()  # Enable TLS
+mqtt_client.connect(settings.MQTT_BROKER, settings.MQTT_PORT)
+mqtt_client.loop_start()
 
 class LightScheduleListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1077,7 +1089,6 @@ class LightScheduleListCreateAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        # Ensure device exists and user owns it first
         device_id = request.data.get('device')
         if not device_id:
             return Response(
@@ -1099,16 +1110,18 @@ class LightScheduleListCreateAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Now handle the schedule creation
         serializer = LightScheduleSerializer(
             data=request.data,
-            context={'request': request, 'device': device}  # Pass device in context
+            context={'request': request, 'device': device}
         )
         
         if serializer.is_valid():
+            if not serializer.validated_data.get('handled_by_user', False):
+                self._handle_automatic_scheduling(serializer)
+            
             try:
-                # Explicitly set the device before saving
                 instance = serializer.save(device=device)
+                self._publish_schedule_update(instance)
                 return Response(
                     LightScheduleSerializer(instance).data,
                     status=status.HTTP_201_CREATED
@@ -1118,7 +1131,7 @@ class LightScheduleListCreateAPIView(APIView):
                     {"error": str(e)},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
+                
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def _handle_automatic_scheduling(self, serializer):
@@ -1136,6 +1149,26 @@ class LightScheduleListCreateAPIView(APIView):
                 'sunday': hours
             }
 
+    def _publish_schedule_update(self, schedule):
+        """Publish schedule updates to MQTT"""
+        topic = f"devices/{schedule.device.din}/light_schedule"
+        payload = {
+            "type": "light_schedule_update",
+            "data": LightScheduleSerializer(schedule).data,
+            "timestamp": timezone.now().isoformat()
+        }
+        
+        try:
+            mqtt_client.publish(
+                topic,
+                json.dumps(payload),
+                qos=1,
+                retain=True
+            )
+            logger.info(f"Published light schedule update to {topic}")
+        except Exception as e:
+            logger.error(f"Failed to publish MQTT message: {e}")
+
 
 class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1147,23 +1180,21 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
                 raise PermissionDenied("You don't own this device")
             return schedule
         except LightSchedule.DoesNotExist:
-            raise Http404(f"No LightSchedule found with id {pk}")
+            raise NotFound(f"No LightSchedule found with id {pk}")
 
     def get(self, request, pk):
         try:
             schedule = self.get_object(pk, request.user)
             serializer = LightScheduleSerializer(schedule, context={'request': request})
             return Response(serializer.data)
-        except Http404 as e:
+        except NotFound as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
-        
 
     def put(self, request, pk):
         try:
             schedule = self.get_object(pk, request.user)
-            #schedule = self.get(request, pk)
             serializer = LightScheduleSerializer(
                 schedule, 
                 data=request.data, 
@@ -1171,23 +1202,22 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
             )
             
             if serializer.is_valid():
-                # Prevent changing the device reference
                 if 'device' in request.data and request.data['device'] != schedule.device.id:
                     return Response(
                         {"detail": "Cannot change device reference for an existing schedule"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Handle automatic scheduling
                 if not serializer.validated_data.get('handled_by_user', False):
                     self._handle_automatic_scheduling(serializer)
                 
                 serializer.save()
+                self._publish_schedule_update(serializer.instance)
                 return Response(serializer.data)
                 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
-        except Http404 as e:
+        except NotFound as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
@@ -1203,23 +1233,22 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
             )
             
             if serializer.is_valid():
-                # Prevent changing the device reference
                 if 'device' in request.data and request.data['device'] != schedule.device.id:
                     return Response(
                         {"detail": "Cannot change device reference for an existing schedule"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # Handle automatic scheduling
                 if not serializer.validated_data.get('handled_by_user', False):
                     self._handle_automatic_scheduling(serializer)
                 
                 serializer.save()
+                self._publish_schedule_update(serializer.instance)
                 return Response(serializer.data)
                 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
-        except Http404 as e:
+        except NotFound as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
@@ -1227,9 +1256,25 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
     def delete(self, request, pk):
         try:
             schedule = self.get_object(pk, request.user)
+            device_din = schedule.device.din
             schedule.delete()
+            
+            # Publish deletion
+            topic = f"devices/{device_din}/light_schedule"
+            try:
+                mqtt_client.publish(
+                    topic,
+                    "",
+                    qos=1,
+                    retain=True
+                )
+                logger.info(f"Published light schedule deletion to {topic}")
+            except Exception as e:
+                logger.error(f"Failed to publish MQTT deletion message: {e}")
+                
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except Http404 as e:
+            
+        except NotFound as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
@@ -1248,3 +1293,184 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
                 'saturday': hours,
                 'sunday': hours
             }
+
+# class LightScheduleListCreateAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         schedules = LightSchedule.objects.filter(device__owner=request.user)
+#         serializer = LightScheduleSerializer(schedules, many=True, context={'request': request})
+#         return Response(serializer.data)
+
+#     def post(self, request):
+#         # Ensure device exists and user owns it first
+#         device_id = request.data.get('device')
+#         if not device_id:
+#             return Response(
+#                 {"detail": "Device ID is required"},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+        
+#         try:
+#             device = Device.objects.get(pk=device_id)
+#         except Device.DoesNotExist:
+#             return Response(
+#                 {"detail": f"Device with ID {device_id} does not exist"},
+#                 status=status.HTTP_404_NOT_FOUND
+#             )
+        
+#         if device.owner != request.user:
+#             return Response(
+#                 {"detail": "You don't own this device"},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+        
+#         # Now handle the schedule creation
+#         serializer = LightScheduleSerializer(
+#             data=request.data,
+#             context={'request': request, 'device': device}  # Pass device in context
+#         )
+        
+#         if serializer.is_valid():
+#             try:
+#                 # Explicitly set the device before saving
+#                 instance = serializer.save(device=device)
+#                 return Response(
+#                     LightScheduleSerializer(instance).data,
+#                     status=status.HTTP_201_CREATED
+#                 )
+#             except IntegrityError as e:
+#                 return Response(
+#                     {"error": str(e)},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+        
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def _handle_automatic_scheduling(self, serializer):
+#         """Helper method to handle automatic scheduling logic"""
+#         first_crop = Crop.objects.first()
+#         if first_crop and first_crop.required_light_duration:
+#             hours = first_crop.required_light_duration
+#             serializer.validated_data['schedule_for_week'] = {
+#                 'monday': hours,
+#                 'tuesday': hours,
+#                 'wednesday': hours,
+#                 'thursday': hours,
+#                 'friday': hours,
+#                 'saturday': hours,
+#                 'sunday': hours
+#             }
+
+
+# class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get_object(self, pk, user):
+#         try:
+#             schedule = LightSchedule.objects.get(pk=pk)
+#             if schedule.device.owner != user:
+#                 raise PermissionDenied("You don't own this device")
+#             return schedule
+#         except LightSchedule.DoesNotExist:
+#             raise Http404(f"No LightSchedule found with id {pk}")
+
+#     def get(self, request, pk):
+#         try:
+#             schedule = self.get_object(pk, request.user)
+#             serializer = LightScheduleSerializer(schedule, context={'request': request})
+#             return Response(serializer.data)
+#         except Http404 as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+#         except PermissionDenied as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        
+
+#     def put(self, request, pk):
+#         try:
+#             schedule = self.get_object(pk, request.user)
+#             #schedule = self.get(request, pk)
+#             serializer = LightScheduleSerializer(
+#                 schedule, 
+#                 data=request.data, 
+#                 context={'request': request}
+#             )
+            
+#             if serializer.is_valid():
+#                 # Prevent changing the device reference
+#                 if 'device' in request.data and request.data['device'] != schedule.device.id:
+#                     return Response(
+#                         {"detail": "Cannot change device reference for an existing schedule"},
+#                         status=status.HTTP_400_BAD_REQUEST
+#                     )
+                
+#                 # Handle automatic scheduling
+#                 if not serializer.validated_data.get('handled_by_user', False):
+#                     self._handle_automatic_scheduling(serializer)
+                
+#                 serializer.save()
+#                 return Response(serializer.data)
+                
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+#         except Http404 as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+#         except PermissionDenied as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+#     def patch(self, request, pk):
+#         try:
+#             schedule = self.get_object(pk, request.user)
+#             serializer = LightScheduleSerializer(
+#                 schedule, 
+#                 data=request.data, 
+#                 partial=True,
+#                 context={'request': request}
+#             )
+            
+#             if serializer.is_valid():
+#                 # Prevent changing the device reference
+#                 if 'device' in request.data and request.data['device'] != schedule.device.id:
+#                     return Response(
+#                         {"detail": "Cannot change device reference for an existing schedule"},
+#                         status=status.HTTP_400_BAD_REQUEST
+#                     )
+                
+#                 # Handle automatic scheduling
+#                 if not serializer.validated_data.get('handled_by_user', False):
+#                     self._handle_automatic_scheduling(serializer)
+                
+#                 serializer.save()
+#                 return Response(serializer.data)
+                
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+#         except Http404 as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+#         except PermissionDenied as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+#     def delete(self, request, pk):
+#         try:
+#             schedule = self.get_object(pk, request.user)
+#             schedule.delete()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+#         except Http404 as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+#         except PermissionDenied as e:
+#             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+#     def _handle_automatic_scheduling(self, serializer):
+#         """Helper method to handle automatic scheduling logic"""
+#         first_crop = Crop.objects.first()
+#         if first_crop and first_crop.required_light_duration:
+#             hours = first_crop.required_light_duration
+#             serializer.validated_data['schedule_for_week'] = {
+#                 'monday': hours,
+#                 'tuesday': hours,
+#                 'wednesday': hours,
+#                 'thursday': hours,
+#                 'friday': hours,
+#                 'saturday': hours,
+#                 'sunday': hours
+#             }

@@ -359,3 +359,9 @@ LOGGING = {
         },
     },
 }
+
+# MQTT Configuration
+MQTT_BROKER = "5acf219d28014115bfe92ebe6f2afa31.s1.eu.hivemq.cloud"
+MQTT_PORT = 8883
+MQTT_USER = "admin"
+MQTT_PASSWORD = "ATmega32u"  # In production, use environment variables
