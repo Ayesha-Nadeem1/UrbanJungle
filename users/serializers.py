@@ -205,11 +205,18 @@ class LightScheduleSerializer(serializers.ModelSerializer):
         handled_by_user = data.get('handled_by_user', False)
         
         if handled_by_user:
-            if not data.get('schedule_for_week'):
+            # Manual scheduling validation
+            schedule_for_week = data.get('schedule_for_week')
+            if not schedule_for_week:
                 raise serializers.ValidationError("Weekly schedule is required for manual scheduling")
+            
+            # Validate the schedule_for_week structure
+            self._validate_weekly_schedule(schedule_for_week)
+            
             if data.get('light_on_time') or data.get('light_on_duration'):
                 raise serializers.ValidationError("light_on_time and light_on_duration must be null for manual scheduling")
         else:
+            # Automatic scheduling validation
             if data.get('schedule_for_week'):
                 raise serializers.ValidationError("Weekly schedule must be null for automatic scheduling")
             if not data.get('light_on_time'):
@@ -224,8 +231,28 @@ class LightScheduleSerializer(serializers.ModelSerializer):
         
         return data
 
+    def _validate_weekly_schedule(self, schedule):
+        """Validate the structure of the weekly schedule"""
+        weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        
+        # Check all weekdays are present
+        missing_days = [day for day in weekdays if day not in schedule]
+        if missing_days:
+            raise serializers.ValidationError(f"Missing schedule for days: {', '.join(missing_days)}")
+        
+        # Validate each day's schedule
+        for day, day_schedule in schedule.items():
+            if day.lower() not in weekdays:
+                raise serializers.ValidationError(f"Invalid day '{day}' in schedule")
+            
+            # Support both simple hours (int) or detailed schedule (dict)
+            if isinstance(day_schedule, dict):
+                if 'on_time' not in day_schedule or 'duration' not in day_schedule:
+                    raise serializers.ValidationError(f"Day '{day}' schedule must contain 'on_time' and 'duration'")
+            elif not isinstance(day_schedule, (int, float)):
+                raise serializers.ValidationError(f"Day '{day}' schedule must be either hours (number) or detailed schedule (dict)")
+
     def validate_device(self, value):
-        # Check if the requesting user owns the device
         if self.context['request'].user != value.owner:
             raise serializers.ValidationError("You don't own this device")
         return value

@@ -136,13 +136,13 @@ class LightSchedule(models.Model):
     def save(self, *args, **kwargs):
         if self.handled_by_user: #manual scheduling
             # Ensure both `light_on_time` and `light_on_duration` are provided
-            if self.light_on_time is None or self.light_on_duration is None:
+            if self.light_on_time is not None or self.light_on_duration is not None:
                 raise ValueError(
-                    "In manual scheduling, both time to turn the light and duration must be provided."
+                    "In manual scheduling, both time to turn the light and duration must be null. It should be provided in week's schedule."
                 )
         else: #scheduling by team
             # Set `light_on_duration` to None
-            self.light_on_duration = None
+            #self.light_on_duration = None
             if self.light_on_time is None:
                 raise ValueError(
                     "Time to turn the light on must be provided."
