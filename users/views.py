@@ -1078,7 +1078,7 @@ class LightScheduleListCreateAPIView(APIView):
     def post(self, request):
         serializer = LightScheduleSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            device_id = request.data.get('device_id')
+            device_id = request.data.get('device')
             device = get_object_or_404(Device, pk=device_id)
             
             # Check device ownership
