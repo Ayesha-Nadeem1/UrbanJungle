@@ -194,6 +194,7 @@ class BlogSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 from .models import LightSchedule, Device, Crop
+from datetime import timedelta
 
 class LightScheduleSerializer(serializers.ModelSerializer):
     device = serializers.PrimaryKeyRelatedField(queryset=Device.objects.all())
@@ -226,7 +227,7 @@ class LightScheduleSerializer(serializers.ModelSerializer):
             if not data.get('light_on_duration'):
                 first_crop = Crop.objects.first()
                 if first_crop and first_crop.required_light_duration:
-                    data['light_on_duration'] = first_crop.required_light_duration
+                    data['light_on_duration'] = timedelta(hours=first_crop.required_light_duration)
                 else:
                     raise serializers.ValidationError("No crop with light duration found")
         
