@@ -1192,11 +1192,12 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except PermissionDenied as e:
             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        
 
     def put(self, request, pk):
         try:
-            #schedule = self.get_object(pk, request.user)
-            schedule = self.get(request, pk)
+            schedule = self.get_object(pk, request.user)
+            #schedule = self.get(request, pk)
             serializer = LightScheduleSerializer(
                 schedule, 
                 data=request.data, 
