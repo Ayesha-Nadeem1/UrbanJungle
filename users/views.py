@@ -1294,6 +1294,26 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
                 'sunday': hours
             }
 
+    def _publish_schedule_update(self, schedule):
+        """Publish schedule updates to MQTT"""
+        topic = f"devices/{schedule.device.din}/light_schedule"
+        payload = {
+            "type": "light_schedule_update",
+            "data": LightScheduleSerializer(schedule).data,
+            "timestamp": timezone.now().isoformat()
+        }
+        
+        try:
+            mqtt_client.publish(
+                topic,
+                json.dumps(payload),
+                qos=1,
+                retain=True
+            )
+            logger.info(f"Published light schedule update to {topic}")
+        except Exception as e:
+            logger.error(f"Failed to publish MQTT message: {e}")
+
 # class LightScheduleListCreateAPIView(APIView):
 #     permission_classes = [IsAuthenticated]
 
