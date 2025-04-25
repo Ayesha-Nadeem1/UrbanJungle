@@ -1066,6 +1066,7 @@ from .models import LightSchedule, Device, Crop
 from .serializers import LightScheduleSerializer
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
+from django.http import Http404
 
 class LightScheduleListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
