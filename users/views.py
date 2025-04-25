@@ -1057,11 +1057,20 @@ from .models import LightSchedule, Device
 from .serializers import LightScheduleSerializer
 from django.shortcuts import get_object_or_404
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from .models import LightSchedule, Device, Crop
+from .serializers import LightScheduleSerializer
+from django.shortcuts import get_object_or_404
+from django.db import IntegrityError
+
 class LightScheduleListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Only show schedules for devices owned by the user
         schedules = LightSchedule.objects.filter(device__owner=request.user)
         serializer = LightScheduleSerializer(schedules, many=True, context={'request': request})
         return Response(serializer.data)
@@ -1069,33 +1078,53 @@ class LightScheduleListCreateAPIView(APIView):
     def post(self, request):
         serializer = LightScheduleSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            # Verify device ownership
             device_id = request.data.get('device')
             device = get_object_or_404(Device, pk=device_id)
+            
+            # Check device ownership
             if device.owner != request.user:
                 return Response(
                     {"detail": "You don't own this device"},
                     status=status.HTTP_403_FORBIDDEN
                 )
-
-            # Handle automatic scheduling week data
-            if not serializer.validated_data.get('handled_by_user', False):
-                first_crop = Crop.objects.first()
-                if first_crop and first_crop.required_light_duration:
-                    hours = first_crop.required_light_duration
-                    serializer.validated_data['schedule_for_week'] = {
-                        'monday': hours,
-                        'tuesday': hours,
-                        'wednesday': hours,
-                        'thursday': hours,
-                        'friday': hours,
-                        'saturday': hours,
-                        'sunday': hours
-                    }
             
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Check if device already has a schedule
+            if LightSchedule.objects.filter(device=device).exists():
+                return Response(
+                    {"detail": "This device already has a light schedule"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Handle automatic scheduling
+            if not serializer.validated_data.get('handled_by_user', False):
+                self._handle_automatic_scheduling(serializer)
+            
+            try:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except IntegrityError:
+                return Response(
+                    {"detail": "This device already has a light schedule"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def _handle_automatic_scheduling(self, serializer):
+        """Helper method to handle automatic scheduling logic"""
+        first_crop = Crop.objects.first()
+        if first_crop and first_crop.required_light_duration:
+            hours = first_crop.required_light_duration
+            serializer.validated_data['schedule_for_week'] = {
+                'monday': hours,
+                'tuesday': hours,
+                'wednesday': hours,
+                'thursday': hours,
+                'friday': hours,
+                'saturday': hours,
+                'sunday': hours
+            }
+
 
 class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1118,24 +1147,22 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
             data=request.data, 
             context={'request': request}
         )
+        
         if serializer.is_valid():
-            # Handle automatic scheduling week data update
+            # Prevent changing the device reference
+            if 'device' in request.data and request.data['device'] != schedule.device.id:
+                return Response(
+                    {"detail": "Cannot change device reference for an existing schedule"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Handle automatic scheduling
             if not serializer.validated_data.get('handled_by_user', False):
-                first_crop = Crop.objects.first()
-                if first_crop and first_crop.required_light_duration:
-                    hours = first_crop.required_light_duration
-                    serializer.validated_data['schedule_for_week'] = {
-                        'monday': hours,
-                        'tuesday': hours,
-                        'wednesday': hours,
-                        'thursday': hours,
-                        'friday': hours,
-                        'saturday': hours,
-                        'sunday': hours
-                    }
+                self._handle_automatic_scheduling(serializer)
             
             serializer.save()
             return Response(serializer.data)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk):
@@ -1146,27 +1173,40 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
             partial=True,
             context={'request': request}
         )
+        
         if serializer.is_valid():
-            # Handle automatic scheduling week data update
+            # Prevent changing the device reference
+            if 'device' in request.data and request.data['device'] != schedule.device.id:
+                return Response(
+                    {"detail": "Cannot change device reference for an existing schedule"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Handle automatic scheduling
             if not serializer.validated_data.get('handled_by_user', False):
-                first_crop = Crop.objects.first()
-                if first_crop and first_crop.required_light_duration:
-                    hours = first_crop.required_light_duration
-                    serializer.validated_data['schedule_for_week'] = {
-                        'monday': hours,
-                        'tuesday': hours,
-                        'wednesday': hours,
-                        'thursday': hours,
-                        'friday': hours,
-                        'saturday': hours,
-                        'sunday': hours
-                    }
+                self._handle_automatic_scheduling(serializer)
             
             serializer.save()
             return Response(serializer.data)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         schedule = self.get_object(pk, request.user)
         schedule.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def _handle_automatic_scheduling(self, serializer):
+        """Helper method to handle automatic scheduling logic"""
+        first_crop = Crop.objects.first()
+        if first_crop and first_crop.required_light_duration:
+            hours = first_crop.required_light_duration
+            serializer.validated_data['schedule_for_week'] = {
+                'monday': hours,
+                'tuesday': hours,
+                'wednesday': hours,
+                'thursday': hours,
+                'friday': hours,
+                'saturday': hours,
+                'sunday': hours
+            }
