@@ -1089,7 +1089,7 @@ class LightScheduleListCreateAPIView(APIView):
                 )
             
             # Check if device already has a schedule
-            if LightSchedule.objects.filter(device=device).exists():
+            if LightSchedule.objects.filter(device=device_id).exists():
                 return Response(
                     {"detail": "This device already has a light schedule"},
                     status=status.HTTP_400_BAD_REQUEST
