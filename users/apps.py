@@ -24,6 +24,8 @@ class UsersConfig(AppConfig):
                 )
                 mqtt_thread.start()
                 logger.info("✅ MQTT client initialized in background thread")
+
+                
             except ImportError as e:
                 logger.error(f"🚫 ImportError while starting MQTT: {e}")
             except Exception as e:
