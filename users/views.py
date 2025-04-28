@@ -1260,7 +1260,7 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
             schedule.delete()
             
             # Publish deletion
-            topic = f"devices/{device_din}/light_schedule"
+            topic = f"device/{device_din}/light_schedule"
             try:
                 mqtt_client.publish(
                     topic,
@@ -1296,7 +1296,7 @@ class LightScheduleRetrieveUpdateDestroyAPIView(APIView):
 
     def _publish_schedule_update(self, schedule):
         """Publish schedule updates to MQTT"""
-        topic = f"devices/{schedule.device.din}/light_schedule"
+        topic = f"device/{schedule.device.din}/light_schedule"
         payload = {
             "type": "light_schedule_update",
             "data": LightScheduleSerializer(schedule).data,

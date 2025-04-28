@@ -43,7 +43,7 @@ logger = logging.getLogger("MQTT_Schedule_Monitor")
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         logger.info("Connected to MQTT broker")
-        client.subscribe("devices/+/light_schedule", qos=1)
+        client.subscribe("device/+/light_schedule", qos=1)
     else:
         logger.error(f"Connection failed with code {rc}")
 
