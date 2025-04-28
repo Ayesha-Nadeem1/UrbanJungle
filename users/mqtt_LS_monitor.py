@@ -6,39 +6,49 @@ from datetime import datetime
 import logging
 from django.conf import settings
 
-# Configure logging to match your Django setup
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': '/var/log/django/mqtt_monitor.log',
-            'formatter': 'verbose'
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-    },
-    'loggers': {
-        'MQTT_Schedule_Monitor': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-})
+# # Configure logging to match your Django setup
+# logging.config.dictConfig({
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '{levelname} {asctime} {module} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             'class': 'logging.FileHandler',
+#             'filename': '/var/log/django/mqtt_monitor.log',
+#             'formatter': 'verbose'
+#         },
+#         'console': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'verbose'
+#         },
+#     },
+#     'loggers': {
+#         'MQTT_Schedule_Monitor': {
+#             'handlers': ['file', 'console'],
+#             'level': 'INFO',
+#             'propagate': False,
+#         },
+#     },
+# })
 
-logger = logging.getLogger("MQTT_Schedule_Monitor")
+# logger = logging.getLogger("MQTT_Schedule_Monitor")
+
+logging.basicConfig(
+     level=logging.INFO,
+     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+     handlers=[
+         logging.FileHandler('/var/log/django/mqtt_debug.log'),
+         logging.StreamHandler()
+     ]
+ )
+logger = logging.getLogger(__name__)
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
