@@ -53,6 +53,13 @@ class Device(models.Model):
 
     def __str__(self):
         return f"Device {self.din}"
+    
+class ValidDIN(models.Model):
+    din = models.CharField(max_length=50, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.din
 
 
 # Crop Model
@@ -124,7 +131,23 @@ class Pod(models.Model):
 
     def __str__(self):
         return f"Pod {self.pod_number} in {self.device.din} holding {self.crop.name}"
-            
+    
+class PodAuditLog(models.Model):
+    pod = models.ForeignKey(Pod, on_delete=models.CASCADE, related_name="audit_logs")
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="pod_audit_logs")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pod_audit_logs")
+    crop = models.ForeignKey(Crop, on_delete=models.CASCADE, related_name="pod_audit_logs")
+    crop_name = models.CharField(max_length=255)
+    planting_date = models.DateField()
+    log_date = models.DateTimeField(auto_now_add=True)
+    action = models.CharField(max_length=10, choices=[('CREATE', 'Create'), ('UPDATE', 'Update')])
+
+    class Meta:
+        ordering = ['-log_date']
+
+    def __str__(self):
+        return f"Audit log for Pod {self.pod.id} - {self.action} at {self.log_date}"
+                
 # Light Scheduling Model
 class LightSchedule(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="light_schedule")

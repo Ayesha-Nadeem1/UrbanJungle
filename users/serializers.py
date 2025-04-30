@@ -81,11 +81,22 @@ class CropSerializer(serializers.ModelSerializer):
         ]))
         return super().update(instance, validated_data)
 
+# class DeviceSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Device
+#         fields = ['id', 'din', 'qr_code', 'device_type','device_name']  # Exclude 'owner'
+#         read_only_fields = ['id', 'qr_code']
+
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ['id', 'din', 'qr_code', 'device_type','device_name']  # Exclude 'owner'
-        read_only_fields = ['id', 'qr_code']
+        fields = '__all__'
+        read_only_fields = ('din',)  # Make DIN read-only after creation
+
+    def update(self, instance, validated_data):
+        # Remove din from validated_data if present to prevent updates
+        validated_data.pop('din', None)
+        return super().update(instance, validated_data)
 
 
 class PodSerializer(serializers.ModelSerializer):
@@ -258,3 +269,10 @@ class LightScheduleSerializer(serializers.ModelSerializer):
         if self.context['request'].user != value.owner:
             raise serializers.ValidationError("You don't own this device")
         return value
+    
+from .models import ValidDIN
+class ValidDINSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ValidDIN
+        fields = ['din']  # Only exposing the din field
+        read_only_fields = ['created_at']  # created_at is auto-generated

@@ -27,7 +27,9 @@ from .views import (
     OrderListCreateView, OrderRetrieveUpdateDeleteView,
     OrderItemListView, OrderItemRetrieveUpdateDeleteView, AddressListCreateView, AddressUpdateDeleteView,
     BlogListCreateAPIView,BlogDetailAPIView,
-    LightScheduleListCreateAPIView, LightScheduleRetrieveUpdateDestroyAPIView
+    LightScheduleListCreateAPIView, LightScheduleRetrieveUpdateDestroyAPIView,
+    ValidDINListCreateView, ValidDINRetrieveUpdateDestroyView,
+    SinglePodAuditLogView, DevicePodsAuditLogView,
     )
 
 urlpatterns = [
@@ -49,6 +51,10 @@ urlpatterns = [
     path('crops/<int:pk>/', CropRetrieveUpdateDeleteView.as_view(), name='crop-detail'),
     path('get-crop-names/', CropNamesView.as_view(), name='crop-list'),
 
+    #valid dins
+    path('valid-dins/', ValidDINListCreateView.as_view(), name='valid-din-list-create'),
+    path('valid-dins/<int:pk>/', ValidDINRetrieveUpdateDestroyView.as_view(), name='valid-din-retrieve-destroy'),
+
     #device
     path('devices/', DeviceCreateRetrieveView.as_view(), name='device-create-retrieve'),  # Create & List
     path('devices/<int:device_id>/', DeviceUpdateDeleteView.as_view(), name='device-update-delete'),  # Update & Delete
@@ -61,6 +67,10 @@ urlpatterns = [
     #pod
     path('pods/', PodCreateRetrieveView.as_view(), name='pod-create-retrieve'),  # Create and List Pods
     path('pods/<int:device_id>/', PodUpdateDeleteView.as_view(), name='pod-update-delete'),  # Update and Delete Pods
+
+    #pods audit logs
+    path('pods/<int:pod_id>/audit-logs/', SinglePodAuditLogView.as_view(), name='pod-audit-logs'),
+    path('devices/<int:device_id>/pods/audit-logs/', DevicePodsAuditLogView.as_view(), name='device-pods-audit-logs'),
 
     #todos
     path('todos/', TodoListCreateView.as_view(), name='todo-list-create'),

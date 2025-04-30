@@ -235,6 +235,14 @@ class DeviceCreateRetrieveView(APIView):
 
     def post(self, request, *args, **kwargs):
         """Create a new device and send a WebSocket notification."""
+        # Check if DIN is valid
+        din = request.data.get('din')
+        if not ValidDIN.objects.filter(din=din).exists():
+            return Response(
+                {"error": "Invalid DIN. Please provide a valid device identification number."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         serializer = DeviceSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             device = serializer.save(owner=request.user)
@@ -285,28 +293,137 @@ class DeviceUpdateDeleteView(APIView):
         device.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.views import APIView
+from .models import ValidDIN
+from .permissions import IsAdminUser
 
+class ValidDINListCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        """List all valid DINs (Admin only)"""
+        dins = ValidDIN.objects.all().order_by('-created_at')
+        data = [{"din": din.din, "created_at": din.created_at} for din in dins]
+        return Response(data)
+
+    def post(self, request):
+        """Create a new valid DIN (Admin only)"""
+        din = request.data.get('din')
+        if not din:
+            return Response({"error": "DIN is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            valid_din = ValidDIN.objects.create(din=din)
+            return Response({"din": valid_din.din}, status=status.HTTP_201_CREATED)
+        except IntegrityError:
+            return Response({"error": "DIN already exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+class ValidDINRetrieveUpdateDestroyView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_object(self, pk):
+        try:
+            return ValidDIN.objects.get(pk=pk)
+        except ValidDIN.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        """Retrieve a specific DIN by ID (Admin only)"""
+        valid_din = self.get_object(pk)
+        if not valid_din:
+            return Response({"error": "DIN not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            "id": valid_din.id,
+            "din": valid_din.din, 
+            "created_at": valid_din.created_at
+        })
+
+    def put(self, request, pk):
+        """Update a DIN (Admin only)"""
+        valid_din = self.get_object(pk)
+        if not valid_din:
+            return Response({"error": "DIN not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        din_value = request.data.get('din')
+        if not din_value:
+            return Response({"error": "DIN is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if new DIN already exists (excluding current record)
+        if ValidDIN.objects.filter(din=din_value).exclude(pk=valid_din.pk).exists():
+            return Response({"error": "This DIN already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        valid_din.din = din_value
+        valid_din.save()
+        return Response({
+            "id": valid_din.id,
+            "din": valid_din.din,
+            "created_at": valid_din.created_at
+        })
+
+    def delete(self, request, pk):
+        """Delete a DIN by ID (Admin only)"""
+        valid_din = self.get_object(pk)
+        if not valid_din:
+            return Response({"error": "DIN not found"}, status=status.HTTP_404_NOT_FOUND)
+        valid_din.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
 class PodCreateRetrieveView(APIView):
     permission_classes = [IsAuthenticated]
 
+    # def post(self, request, *args, **kwargs):
+    #     """Create a new pod"""
+    #     din = request.data.get('din')  # Get the device DIN from the request
+    #     if not din:
+    #         return Response({"error": "DIN is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     try:
+    #         # Fetch the device and ensure the user is the owner
+    #         device = Device.objects.get(din=din)
+    #         if device.owner != request.user:
+    #             return Response({"error": "You do not own this device."}, status=status.HTTP_403_FORBIDDEN)
+
+    #         # Add the device to the request data
+    #         request.data['device'] = device.id
+
+    #         serializer = PodSerializer(data=request.data)
+    #         if serializer.is_valid():
+    #             pod = serializer.save()
+    #             return Response(PodSerializer(pod).data, status=status.HTTP_201_CREATED)
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     except Device.DoesNotExist:
+    #         return Response({"error": "Invalid DIN."}, status=status.HTTP_404_NOT_FOUND)
     def post(self, request, *args, **kwargs):
         """Create a new pod"""
-        din = request.data.get('din')  # Get the device DIN from the request
+        din = request.data.get('din')
         if not din:
             return Response({"error": "DIN is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Fetch the device and ensure the user is the owner
             device = Device.objects.get(din=din)
             if device.owner != request.user:
                 return Response({"error": "You do not own this device."}, status=status.HTTP_403_FORBIDDEN)
 
-            # Add the device to the request data
             request.data['device'] = device.id
-
             serializer = PodSerializer(data=request.data)
+            
             if serializer.is_valid():
                 pod = serializer.save()
+                
+                # Create audit log entry
+                PodAuditLog.objects.create(
+                    pod=pod,
+                    device=device,
+                    owner=request.user,
+                    crop=pod.crop,
+                    crop_name=pod.crop.name,
+                    planting_date=pod.planting_date,
+                    action='CREATE'
+                )
+                
                 return Response(PodSerializer(pod).data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Device.DoesNotExist:
@@ -331,7 +448,7 @@ class PodCreateRetrieveView(APIView):
         except Device.DoesNotExist:
             return Response({"error": "Invalid DIN."}, status=status.HTTP_404_NOT_FOUND)
 
-
+from .models import PodAuditLog
 class PodUpdateDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -345,6 +462,24 @@ class PodUpdateDeleteView(APIView):
         except Device.DoesNotExist:
             raise PermissionDenied("Device not found.")
 
+    # def put(self, request, device_id, *args, **kwargs):
+    #     """Update a specific pod of a device"""
+    #     device = self.get_device(device_id, request.user)
+    #     pod_id = request.data.get('pod_id')
+
+    #     if not pod_id:
+    #         return Response({"error": "Pod ID is required for update."}, status=status.HTTP_400_BAD_REQUEST)
+
+    #     try:
+    #         pod = Pod.objects.get(id=pod_id, device=device)
+    #         serializer = PodSerializer(pod, data=request.data, partial=True)
+    #         if serializer.is_valid():
+    #             pod = serializer.save()
+    #             return Response(PodSerializer(pod).data, status=status.HTTP_200_OK)
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     except Pod.DoesNotExist:
+    #         return Response({"error": "Pod not found in this device."}, status=status.HTTP_404_NOT_FOUND)
+
     def put(self, request, device_id, *args, **kwargs):
         """Update a specific pod of a device"""
         device = self.get_device(device_id, request.user)
@@ -355,13 +490,30 @@ class PodUpdateDeleteView(APIView):
 
         try:
             pod = Pod.objects.get(id=pod_id, device=device)
+            old_crop = pod.crop
+            old_planting_date = pod.planting_date
+            
             serializer = PodSerializer(pod, data=request.data, partial=True)
             if serializer.is_valid():
                 pod = serializer.save()
+                
+                # Check if crop or planting date changed
+                if pod.crop != old_crop or pod.planting_date != old_planting_date:
+                    PodAuditLog.objects.create(
+                        pod=pod,
+                        device=device,
+                        owner=request.user,
+                        crop=pod.crop,
+                        crop_name=pod.crop.name,
+                        planting_date=pod.planting_date,
+                        action='UPDATE'
+                    )
+                
                 return Response(PodSerializer(pod).data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Pod.DoesNotExist:
             return Response({"error": "Pod not found in this device."}, status=status.HTTP_404_NOT_FOUND)
+
 
     def delete(self, request, device_id, *args, **kwargs):
         """Delete a specific pod of a device"""
@@ -378,7 +530,67 @@ class PodUpdateDeleteView(APIView):
         except Pod.DoesNotExist:
             return Response({"error": "Pod not found in this device."}, status=status.HTTP_404_NOT_FOUND)
 
+class PodAuditLogView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get_pod(self, pod_id, user):
+        """Helper method to get pod and verify ownership"""
+        try:
+            pod = Pod.objects.get(id=pod_id)
+            if pod.device.owner != user:
+                raise PermissionDenied("You don't have permission to view this pod's audit logs.")
+            return pod
+        except Pod.DoesNotExist:
+            raise NotFound("Pod not found.")
+
+    def get_device(self, device_id, user):
+        """Helper method to get device and verify ownership"""
+        try:
+            device = Device.objects.get(id=device_id)
+            if device.owner != user:
+                raise PermissionDenied("You don't have permission to view this device's audit logs.")
+            return device
+        except Device.DoesNotExist:
+            raise NotFound("Device not found.")
+
+class SinglePodAuditLogView(PodAuditLogView):
+    """Get audit logs for a specific pod"""
+    def get(self, request, pod_id):
+        pod = self.get_pod(pod_id, request.user)
+        logs = PodAuditLog.objects.filter(pod=pod).order_by('-log_date')
+        
+        data = [{
+            'id': log.id,
+            'pod_id': log.pod.id,
+            'device_id': log.device.id,
+            'device_din': log.device.din,
+            'crop_id': log.crop.id,
+            'crop_name': log.crop_name,
+            'planting_date': log.planting_date,
+            'log_date': log.log_date,
+            'action': log.action
+        } for log in logs]
+        
+        return Response(data)
+
+class DevicePodsAuditLogView(PodAuditLogView):
+    """Get audit logs for all pods of a specific device"""
+    def get(self, request, device_id):
+        device = self.get_device(device_id, request.user)
+        logs = PodAuditLog.objects.filter(device=device).order_by('-log_date')
+        
+        data = [{
+            'id': log.id,
+            'pod_id': log.pod.id,
+            'pod_number': log.pod.pod_number,
+            'crop_id': log.crop.id,
+            'crop_name': log.crop_name,
+            'planting_date': log.planting_date,
+            'log_date': log.log_date,
+            'action': log.action
+        } for log in logs]
+        
+        return Response(data)
 
 class UserDevicesView(APIView):
     permission_classes = [IsAuthenticated]
