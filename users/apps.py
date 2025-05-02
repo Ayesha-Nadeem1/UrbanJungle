@@ -13,7 +13,7 @@ class UsersConfig(AppConfig):
         import users.signals
 
         # Prevent double-threading in Django dev server
-        if os.environ.get('RUN_MAIN') == 'true':
+        if os.environ.get('RUN_MAIN') == 'true' and not self._running_under_systemd():
             try:
                 from users.mqtt import initialize_and_start_mqtt
                 from users.mqtt_LS_monitor import start_monitor
@@ -39,3 +39,20 @@ class UsersConfig(AppConfig):
                 logger.error(f"🚫 ImportError while starting MQTT: {e}")
             except Exception as e:
                 logger.error(f"🚫 Unexpected error in MQTT initialization: {e}", exc_info=True)
+
+    def _running_under_systemd(self):
+        """Check if we're running under systemd management"""
+        # Method 1: Check parent process
+        try:
+            with open('/proc/self/status') as f:
+                for line in f:
+                    if line.startswith('PPid:'):
+                        ppid = int(line.split()[1])
+                        with open(f'/proc/{ppid}/cmdline', 'rb') as cmd:
+                            cmdline = cmd.read().decode().replace('\x00', ' ')
+                            return 'systemd' in cmdline
+        except:
+            pass
+
+        # Method 2: Check environment variables
+        return os.environ.get('INVOCATION_ID') is not None  # systemd sets this
