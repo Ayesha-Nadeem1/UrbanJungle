@@ -88,7 +88,7 @@ class CropSerializer(serializers.ModelSerializer):
 #         read_only_fields = ['id', 'qr_code']
 
 class DeviceSerializer(serializers.ModelSerializer):
-    din = serializers.CharField(source='din', read_only=False)  # Explicit field definition
+    din = serializers.CharField(read_only=False)  # Explicit field definition
 
     class Meta:
         model = Device
