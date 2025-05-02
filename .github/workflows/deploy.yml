@@ -45,10 +45,12 @@ jobs:
             # Restart services
             sudo supervisorctl reread
             sudo supervisorctl update
-            sudo supervisorctl start django
+            #sudo supervisorctl start django
+            sudo supervisorctl stop daphne
 
             sudo systemctl restart nginx
             sudo systemctl restart gunicorn
+            sudo systemctl restart daphne
             sudo systemctl restart redis
             sudo systemctl restart celery
             sudo systemctl restart celery-beat
