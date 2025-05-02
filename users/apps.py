@@ -16,6 +16,7 @@ class UsersConfig(AppConfig):
         if os.environ.get('RUN_MAIN') == 'true':
             try:
                 from users.mqtt import initialize_and_start_mqtt
+                from users.mqtt_LS_monitor import start_monitor
 
                 mqtt_thread = threading.Thread(
                     target=initialize_and_start_mqtt,
@@ -24,6 +25,14 @@ class UsersConfig(AppConfig):
                 )
                 mqtt_thread.start()
                 logger.info("✅ MQTT client initialized in background thread")
+
+                mqtt_thread2 = threading.Thread(
+                    target=start_monitor,
+                    daemon=True,
+                    name="MQTT_Thread2"
+                )
+                mqtt_thread2.start()
+                logger.info("✅ MQTT LS monitor initialized in background thread")
 
                 
             except ImportError as e:
