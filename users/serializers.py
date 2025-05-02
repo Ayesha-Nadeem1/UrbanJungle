@@ -87,6 +87,11 @@ class DeviceSerializer(serializers.ModelSerializer):
         fields = ['id', 'din', 'qr_code', 'device_type','device_name']  # Exclude 'owner'
         read_only_fields = ['id', 'qr_code']
 
+        def update(self, instance, validated_data):
+        # Prevent DIN updates
+            validated_data.pop('din', None)
+            return super().update(instance, validated_data)
+
 # class DeviceSerializer(serializers.ModelSerializer):
 #     din = serializers.CharField(read_only=False)  # Explicit field definition
 
@@ -104,10 +109,6 @@ class DeviceSerializer(serializers.ModelSerializer):
 #             validated_data['din'] = din.upper()  # Or any formatting you need
 #         return super().create(validated_data)
 
-#     def update(self, instance, validated_data):
-#         # Prevent DIN updates
-#         validated_data.pop('din', None)
-#         return super().update(instance, validated_data)
     
 class PodSerializer(serializers.ModelSerializer):
     class Meta:
