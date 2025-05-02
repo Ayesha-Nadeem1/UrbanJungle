@@ -88,10 +88,11 @@ class CropSerializer(serializers.ModelSerializer):
 #         read_only_fields = ['id', 'qr_code']
 
 class DeviceSerializer(serializers.ModelSerializer):
+    din = serializers.CharField(read_only=True)
     class Meta:
         model = Device
         fields = ['id', 'din', 'qr_code', 'device_type','device_name']
-        read_only_fields = ('din',)  # Make DIN read-only after creation
+        read_only_fields = ('din','id')  # Make DIN read-only after creation
 
     def update(self, instance, validated_data):
         # Remove din from validated_data if present to prevent updates
