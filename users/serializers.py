@@ -88,23 +88,27 @@ class CropSerializer(serializers.ModelSerializer):
 #         read_only_fields = ['id', 'qr_code']
 
 class DeviceSerializer(serializers.ModelSerializer):
+    din = serializers.CharField(source='din', read_only=False)  # Explicit field definition
+
     class Meta:
         model = Device
         fields = ['id', 'din', 'qr_code', 'device_type', 'device_name']
         extra_kwargs = {
-            'din': {'read_only': True},
+            'din': {'read_only': False},  # Allow writing on create
         }
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # Ensure din is always included in the output
-        representation['din'] = instance.din
-        return representation
+    def create(self, validated_data):
+        # Ensure DIN is saved during creation
+        din = validated_data.get('din')
+        if din:
+            validated_data['din'] = din.upper()  # Or any formatting you need
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
+        # Prevent DIN updates
         validated_data.pop('din', None)
         return super().update(instance, validated_data)
-
+    
 class PodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pod
