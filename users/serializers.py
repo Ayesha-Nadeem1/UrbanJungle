@@ -85,7 +85,7 @@ class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = ['id', 'din', 'qr_code', 'device_type','device_name']  # Exclude 'owner'
-        read_only_fields = ['id', 'qr_code','din']
+        read_only_fields = ['id', 'qr_code']
 
 # class DeviceSerializer(serializers.ModelSerializer):
 #     din = serializers.CharField(read_only=False)  # Explicit field definition
