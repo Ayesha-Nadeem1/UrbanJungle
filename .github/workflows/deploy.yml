@@ -46,7 +46,7 @@ jobs:
             sudo supervisorctl reread
             sudo supervisorctl update
             #sudo supervisorctl start django
-            sudo supervisorctl stop daphne
+            #sudo supervisorctl stop daphne
 
             sudo systemctl restart nginx
             sudo systemctl restart gunicorn
