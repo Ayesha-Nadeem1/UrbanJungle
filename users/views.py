@@ -573,24 +573,57 @@ class SinglePodAuditLogView(PodAuditLogView):
         
         return Response(data)
 
+# class DevicePodsAuditLogView(PodAuditLogView):
+#     """Get audit logs for all pods of a specific device"""
+#     def get(self, request, device_id):
+#         device = self.get_device(device_id, request.user)
+#         logs = PodAuditLog.objects.filter(device=device).order_by('-log_date')
+        
+#         data = [{
+#             'id': log.id,
+#             'pod_id': log.pod.id,
+#             'device_id': log.device.id,
+#             'device_din': log.device.din,
+#             'pod_number': log.pod.pod_number,
+#             'crop_id': log.crop.id,
+#             'crop_name': log.crop_name,
+#             'planting_date': log.planting_date,
+#             'log_date': log.log_date,
+#             'action': log.action
+#         } for log in logs]
+        
+#         return Response(data)
+    
 class DevicePodsAuditLogView(PodAuditLogView):
-    """Get audit logs for all pods of a specific device"""
+    """Get audit logs for all pods of a specific device, grouped by pod number"""
     def get(self, request, device_id):
         device = self.get_device(device_id, request.user)
         logs = PodAuditLog.objects.filter(device=device).order_by('-log_date')
         
-        data = [{
-            'id': log.id,
-            'pod_id': log.pod.id,
-            'pod_number': log.pod.pod_number,
-            'crop_id': log.crop.id,
-            'crop_name': log.crop_name,
-            'planting_date': log.planting_date,
-            'log_date': log.log_date,
-            'action': log.action
-        } for log in logs]
+        # Create a dictionary to group logs by pod_number
+        pod_audit_map = {}
         
-        return Response(data)
+        for log in logs:
+            pod_number = log.pod.pod_number
+            log_data = {
+                'id': log.id,
+                'pod_id': log.pod.id,
+                'device_id': log.device.id,
+                'device_din': log.device.din,
+                'pod_number': log.pod.pod_number,
+                'crop_id': log.crop.id,
+                'crop_name': log.crop_name,
+                'planting_date': log.planting_date,
+                'log_date': log.log_date,
+                'action': log.action
+            }
+            
+            if pod_number not in pod_audit_map:
+                pod_audit_map[pod_number] = []
+            
+            pod_audit_map[pod_number].append(log_data)
+        
+        return Response(pod_audit_map)
 
 class UserDevicesView(APIView):
     permission_classes = [IsAuthenticated]
