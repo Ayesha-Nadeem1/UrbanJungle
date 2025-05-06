@@ -118,6 +118,86 @@ class AdminLoginView(APIView):
 
         tokens = get_tokens_for_user(user)
         return Response({'tokens': tokens}, status=status.HTTP_200_OK)
+    
+from django.db.models import Q
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+import re
+
+class UsernameValidationView(APIView):
+    """
+    Real-time username validation with comprehensive checks
+    """
+    # Reserved usernames (add more as needed)
+    RESERVED_USERNAMES = [
+        'admin', 'root', 'system', 'support', 'contact', 
+        'help', 'api', 'dev', 'test', 'user'
+    ]
+    
+    # Minimum username length
+    MIN_USERNAME_LENGTH = 4
+    
+    # Maximum username length
+    MAX_USERNAME_LENGTH = 30
+    
+    # Allowed characters regex pattern
+    USERNAME_PATTERN = r'^[a-zA-Z0-9_\.\-]+$'
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username', '').strip()
+        
+        # 1. Empty check
+        if not username:
+            return Response(
+                {'valid': False, 'message': 'Username cannot be empty'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 2. Length validation
+        if len(username) < self.MIN_USERNAME_LENGTH:
+            return Response({
+                'valid': False,
+                'message': f'Username must be at least {self.MIN_USERNAME_LENGTH} characters'
+            })
+            
+        if len(username) > self.MAX_USERNAME_LENGTH:
+            return Response({
+                'valid': False,
+                'message': f'Username cannot exceed {self.MAX_USERNAME_LENGTH} characters'
+            })
+        
+        # 3. Character validation
+        if not re.match(self.USERNAME_PATTERN, username):
+            return Response({
+                'valid': False,
+                'message': 'Username can only contain letters, numbers, underscores, periods and hyphens'
+            })
+        
+        # 4. Reserved username check (case insensitive)
+        if username.lower() in (name.lower() for name in self.RESERVED_USERNAMES):
+            return Response({
+                'valid': False,
+                'message': 'This username is reserved'
+            })
+        
+        # 5. Existing username check (case insensitive)
+        username_exists = User.objects.filter(
+            Q(username__iexact=username) | 
+            Q(email__iexact=username)
+        ).exists()
+        
+        return Response({
+            'valid': not username_exists,
+            'message': 'Username already taken' if username_exists else 'Username available',
+            'suggestions': self.generate_suggestions(username) if username_exists else None
+        })
+    
+    def generate_suggestions(self, username):
+        """Generate alternative username suggestions"""
+        import random
+        suffixes = ['123', '2023', str(random.randint(100, 999)), 'official', 'real']
+        return [f"{username}_{suffix}" for suffix in suffixes[:3]]
 
 
 from rest_framework_simplejwt.tokens import RefreshToken

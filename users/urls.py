@@ -30,6 +30,7 @@ from .views import (
     LightScheduleListCreateAPIView, LightScheduleRetrieveUpdateDestroyAPIView,
     ValidDINListCreateView, ValidDINRetrieveUpdateDestroyView,
     SinglePodAuditLogView, DevicePodsAuditLogView,
+    UsernameValidationView
     )
 
 urlpatterns = [
@@ -37,6 +38,7 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('validate-username/', UsernameValidationView.as_view(), name='validate-username'),
 
     #user
     path('get-user-data/', GetUserDataView.as_view(), name='get_user_data'),
