@@ -73,7 +73,7 @@ class CropSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Recalculate life cycle dynamically
         instance.life_cycle = sum(filter(None, [
-            validated_data.get('seeding_days', instance.seedling_days) or 0,
+            validated_data.get('seeding_days', instance.seeding_days) or 0,
             validated_data.get('sampling_days', instance.sampling_days or 0) ,
             validated_data.get('growth_days', instance.growth_days or 0) ,
             validated_data.get('fruiting_days', instance.fruiting_days or 0) ,
