@@ -244,7 +244,7 @@ class CropListCreateView(APIView):
 
 
 class CropRetrieveUpdateDeleteView(APIView):
-    permission_classes = [IsAdminUser]
+    #permission_classes = [IsAdminUser]
 
     def get_object(self, crop_id):
         try:
