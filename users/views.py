@@ -242,9 +242,49 @@ class CropListCreateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail": "Invalid data format. Expected a list."}, status=status.HTTP_400_BAD_REQUEST)
 
+#permission_classes = [IsAdminUser]
+# class CropRetrieveUpdateDeleteView(APIView):
+    
+#     def get_object(self, crop_id):
+#         try:
+#             return Crop.objects.get(id=crop_id)
+#         except Crop.DoesNotExist:
+#             return None
+
+#     def get(self, request, crop_id, *args, **kwargs):
+#         """Retrieve a crop by ID"""
+#         crop = self.get_object(crop_id)
+#         if not crop:
+#             return Response({"error": "Crop not found"}, status=status.HTTP_404_NOT_FOUND)
+#         serializer = CropSerializer(crop)
+#         return Response(serializer.data)
+
+#     def put(self, request, crop_id, *args, **kwargs):
+#         """Update a crop"""
+#         crop = self.get_object(crop_id)
+#         if not crop:
+#             return Response({"error": "Crop not found"}, status=status.HTTP_404_NOT_FOUND)
+#         serializer = CropSerializer(crop, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def delete(self, request, crop_id, *args, **kwargs):
+#         """Delete a crop"""
+#         crop = self.get_object(crop_id)
+#         if not crop:
+#             return Response({"error": "Crop not found"}, status=status.HTTP_404_NOT_FOUND)
+#         crop.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Crop
+from .serializers import CropSerializer
 
 class CropRetrieveUpdateDeleteView(APIView):
-    #permission_classes = [IsAdminUser]
 
     def get_object(self, crop_id):
         try:
@@ -252,32 +292,54 @@ class CropRetrieveUpdateDeleteView(APIView):
         except Crop.DoesNotExist:
             return None
 
+    def check_admin(self, user):
+        if not hasattr(user, 'is_admin') or not user.is_admin:
+            return Response({"error": "Permission denied. Admins only."}, status=status.HTTP_403_FORBIDDEN)
+        return None
+
     def get(self, request, crop_id, *args, **kwargs):
         """Retrieve a crop by ID"""
+        permission_error = self.check_admin(request.user)
+        if permission_error:
+            return permission_error
+
         crop = self.get_object(crop_id)
         if not crop:
             return Response({"error": "Crop not found"}, status=status.HTTP_404_NOT_FOUND)
+
         serializer = CropSerializer(crop)
         return Response(serializer.data)
 
     def put(self, request, crop_id, *args, **kwargs):
         """Update a crop"""
+        permission_error = self.check_admin(request.user)
+        if permission_error:
+            return permission_error
+
         crop = self.get_object(crop_id)
         if not crop:
             return Response({"error": "Crop not found"}, status=status.HTTP_404_NOT_FOUND)
+
         serializer = CropSerializer(crop, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, crop_id, *args, **kwargs):
         """Delete a crop"""
+        permission_error = self.check_admin(request.user)
+        if permission_error:
+            return permission_error
+
         crop = self.get_object(crop_id)
         if not crop:
             return Response({"error": "Crop not found"}, status=status.HTTP_404_NOT_FOUND)
+
         crop.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 class CropNamesView(APIView):
