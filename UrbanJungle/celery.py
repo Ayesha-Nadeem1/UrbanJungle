@@ -49,10 +49,7 @@ app.conf.beat_schedule = {
         'task': 'users.tasks.check_past_logs_for_abnormalities',  # Replace 'your_app' with your actual app name
         'schedule': crontab(minute=0, hour='*'),  
     },
-    # 'test_task': {
-    #     'task': 'users.tasks.test_task',  # Replace 'your_app' with your actual app name
-    #     'schedule': 60.0,  # Run every 60 seconds  
-    # },
+
 }
 
 @app.task(bind=True)

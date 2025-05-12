@@ -10,10 +10,10 @@ from django.db.models import Q
 channel_layer = get_channel_layer()
 
 
-@shared_task
-def test_task():
-    print("Task executed!")
-    return "Success"
+# @shared_task
+# def test_task():
+#     print("Task executed!")
+#     return "Success"
 
 
 @shared_task

@@ -223,6 +223,26 @@ CACHES = {
     }
 }
 
+#local Redis server
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [('redis', 6379)],
+#         },
+#     },
+# }
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': 'redis://redis:6379/0',
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     }
+# }
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -236,7 +256,6 @@ EMAIL_HOST_PASSWORD = 'tghc jvmu fqhr vpyr'
 # Celery Configuration
 #CELERY_BROKER_URL = 'redis://redis-server:6379/0'
 CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_BACKEND = 'django-db'  # For storing task results
@@ -244,6 +263,14 @@ CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 CELERY_TIMEZONE = 'UTC'
 
 ALLOWED_HOSTS = ['backend.ai-ponics.com', 'www.backend.ai-ponics.com', 'localhost','13.60.206.225','165.22.5.217','127.0.0.1']
+
+#local celery server
+# CELERY_BROKER_URL = 'redis://redis-server:6379/0'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# #CELERY_RESULT_BACKEND = 'django-db'  # For storing task results
+# CELERY_RESULT_BACKEND = 'redis://redis-server:6379/0'
+# CELERY_TIMEZONE = 'UTC'
 
 # Enable secure proxy headers
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -257,39 +284,6 @@ CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_ANCESTORS = ["'self'"]
 
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'mqtt_file': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': '/var/log/django/mqtt.log',
-#             'formatter': 'verbose',
-#         },
-#         'console': {
-#             'level': 'INFO',
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'formatters': {
-#         'verbose': {
-#             'format': '{asctime} {levelname} {name} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'loggers': {
-#         'mqtt': {
-#             'handlers': ['mqtt_file', 'console'],
-#             'level': 'DEBUG',
-#             'propagate': False,
-#         },
-#     },
-# }
-
-import os
-from pathlib import Path
-
 import os
 from pathlib import Path
 
@@ -297,36 +291,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / 'logs' / 'mqtt'
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {
-#             'format': '{asctime} {levelname} {name} {message}',
-#             'style': '{',
-#         },
-#     },
-#     'handlers': {
-#         'mqtt_file': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': str(LOG_DIR / 'mqtt.log'),
-#             'formatter': 'verbose',
-#         },
-#         'console': {
-#             'level': 'INFO',
-#             'class': 'logging.StreamHandler',
-#             'formatter': 'verbose',
-#         },
-#     },
-#     'loggers': {
-#         'mqtt': {
-#             'handlers': ['console'],  # Temporarily remove 'mqtt_file'
-#             'level': 'DEBUG',
-#             'propagate': False,
-#         },
-#     },
-# }
 
 # settings.py
 LOGGING = {
