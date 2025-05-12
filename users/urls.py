@@ -50,7 +50,7 @@ urlpatterns = [
 
     #crop
     path('crops/', CropListCreateView.as_view(), name='crop-list-create'),
-    path('crops/<int:pk>/', CropRetrieveUpdateDeleteView.as_view(), name='crop-detail'),
+    path('crops/<int:crop_id>/', CropRetrieveUpdateDeleteView.as_view(), name='crop-detail'),
     path('get-crop-names/', CropNamesView.as_view(), name='crop-list'),
 
     #valid dins
